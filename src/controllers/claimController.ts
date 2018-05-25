@@ -43,13 +43,21 @@ export class ClaimController extends Controller {
   ): Promise<VerifyClaimResponse> {
     return Promise.resolve(claimRequest)
       .then(() => ({
-        claim: {
-          subject: "123",
-          issuer: "lifeid",
-          issuedAt: "123123",
-          claimType: "email",
-          claimValue: "jon@123.com",
-          signature: "adsfsadf"
+        verifiableClaim: {
+          id: "http://claim-issuer.com/claim/123",
+          type: ["Credential", "EmailCredential"],
+          issuer: "https:/claim-issuer.lifeid.io",
+          issued: "2010-1-1",
+          claim: [{ type: "email", value: "jon@123.com" }],
+          revocation: { id: "123", type: "uh" },
+          signature: {
+            type: "sometype",
+            created: "2016-06-18T21:19:10Z",
+            creator: "https:/claim-issuer.lifeid.io",
+            domain: "json.org",
+            nonce: "4234234234",
+            signatureValue: "asdfasdfasdf"
+          }
         }
       }))
       .catch(err => {

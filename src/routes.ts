@@ -8,27 +8,51 @@ const models: TsoaRoute.Models = {
             "claimID": { "dataType": "string", "required": true },
         },
     },
+    "ClaimProperty": {
+        "properties": {
+            "type": { "dataType": "string", "required": true },
+            "value": { "dataType": "string", "required": true },
+        },
+    },
     "ClaimCreateRequest": {
         "properties": {
-            "claimType": { "dataType": "string", "required": true },
-            "claimValue": { "dataType": "string", "required": true },
+            "claims": { "dataType": "array", "array": { "ref": "ClaimProperty" }, "required": true },
             "subject": { "dataType": "string", "required": true },
             "signature": { "dataType": "string", "required": true },
         },
     },
-    "Claim": {
+    "Revocation": {
         "properties": {
-            "subject": { "dataType": "string", "required": true },
+            "id": { "dataType": "string", "required": true },
+            "type": { "dataType": "string", "required": true },
+        },
+    },
+    "Signature": {
+        "properties": {
+            "type": { "dataType": "string", "required": true },
+            "created": { "dataType": "string", "required": true },
+            "creator": { "dataType": "string", "required": true },
+            "domain": { "dataType": "string" },
+            "nonce": { "dataType": "string", "required": true },
+            "signatureValue": { "dataType": "string", "required": true },
+        },
+    },
+    "VerifiableClaim": {
+        "properties": {
+            "id": { "dataType": "string", "required": true },
+            "type": { "dataType": "array", "array": { "dataType": "string" }, "required": true },
+            "name": { "dataType": "string" },
             "issuer": { "dataType": "string", "required": true },
-            "issuedAt": { "dataType": "string", "required": true },
-            "claimType": { "dataType": "string", "required": true },
-            "claimValue": { "dataType": "string", "required": true },
-            "signature": { "dataType": "string", "required": true },
+            "issued": { "dataType": "string", "required": true },
+            "claim": { "dataType": "array", "array": { "ref": "ClaimProperty" }, "required": true },
+            "expires": { "dataType": "string" },
+            "revocation": { "ref": "Revocation" },
+            "signature": { "ref": "Signature", "required": true },
         },
     },
     "VerifyClaimResponse": {
         "properties": {
-            "claim": { "ref": "Claim", "required": true },
+            "verifiableClaim": { "ref": "VerifiableClaim", "required": true },
         },
     },
     "VerifyClaimRequest": {

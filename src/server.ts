@@ -3,7 +3,6 @@ import * as bodyParser from "body-parser";
 import * as express from "express";
 import * as methodOverride from "method-override";
 import { RegisterRoutes } from "./routes";
-import * as errorHandler from "api-error-handler";
 
 const app = express();
 
@@ -16,7 +15,24 @@ app.use(bodyParser.json());
 app.use(methodOverride());
 
 RegisterRoutes(app);
-app.use(errorHandler());
+
+app.use(
+  (
+    err: any,
+    req: express.Request,
+    res: express.Response,
+    next: express.NextFunction
+  ) => {
+    const status = err.status || 500;
+    const body: any = {
+      fields: err.fields || undefined,
+      message: err.message || "An error occurred during the request.",
+      name: err.name,
+      status
+    };
+    res.status(status).json(body);
+  }
+);
 
 /* tslint:disable-next-line */
 console.log("Starting server on port 3000...");

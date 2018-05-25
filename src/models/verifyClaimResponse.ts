@@ -1,4 +1,4 @@
-import { Claim } from "./claim";
+import { VerifiableClaim } from "./claim";
 export interface VerifyClaimResponse {
-  claim: Claim;
+  verifiableClaim: VerifiableClaim;
 }

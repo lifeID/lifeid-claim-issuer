@@ -1,10 +1,10 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: api-bridge
+  name: claim-issuer
 spec:
   selector:
-    app: api-bridge
+    app: claim-issuer
     tier: backend
   ports:
     - protocol: TCP
@@ -15,19 +15,19 @@ spec:
 apiVersion: apps/v1beta1
 kind: Deployment
 metadata:
-  name: api-bridge
+  name: claim-issuer
 spec:
   replicas: 1
   template:
     metadata:
       labels: # labels to select/identify the deployment
-        app: api-bridge
+        app: claim-issuer
         tier: backend
         track: stable
     spec:     # pod spec
       containers:
-      - name: api-bridge
+      - name: claim-issuer
         ports:
         - name: node
           containerPort: 3000
-        image: us.gcr.io/lifeid-dev/api-bridge:1.0.11 # image we pushed
+        image: us.gcr.io/lifeid-dev/claim-issuer:1.0.0 # image we pushed

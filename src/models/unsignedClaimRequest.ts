@@ -1,6 +1,5 @@
 import { ClaimProperty } from "./claim";
-export interface ClaimCreateRequest {
+export interface UnsignedClaimRequest {
   claims: ClaimProperty[];
   subject: string;
-  signature: string;
 }
