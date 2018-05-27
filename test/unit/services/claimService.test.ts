@@ -1,13 +1,14 @@
 import * as chai from "chai";
-
-import claimService from "../../../src/services/claimService";
-import emailService from "../../../src/services/emailService";
-import * as Accounts from "web3-eth-accounts";
-import * as R from "ramda";
 import * as sinon from "sinon";
 import * as sinonChai from "sinon-chai";
 chai.should();
 chai.use(sinonChai);
+
+import * as proxyquire from "proxyquire";
+import claimService from "../../../src/services/claimService";
+import * as Accounts from "web3-eth-accounts";
+import * as R from "ramda";
+
 const accounts = new Accounts();
 
 describe("claimService", () => {
@@ -90,24 +91,38 @@ describe("claimService", () => {
     });
   });
   describe("createClaimRequeset", () => {
-    let emailServiceSpy;
-    before(() => {
-      emailServiceSpy = sinon.spy(emailService, "handleEmailClaim");
-    });
-    it("should call handle email with email type", () => {
-      const validClaim = {
-        claims: [{ type: "email", value: "john@travolta.com" }],
+    let claimServiceWithMock;
+    let validClaim;
+    let stub;
+    let args;
+    before(async () => {
+      args = { type: "email", value: "john@travolta.com" };
+      validClaim = {
+        claims: [args],
         subject: "did:life:11234Fd4014b81F5d1fDA1355F1bfbD14C812d3f8D22b04f0",
         signature:
           "0xa4648d9dc6bd841ad2991d99f0fe1cff6d44edca8b9cd3327e0306b031c844ce1c0938e4a7695909449c39f3fd1e5b69297496346bf784004d4374ba92debdfd1b"
       };
-      return claimService.createClaimRequeset(validClaim).then(res => {
-        console.log(
-          "-------------------- ",
-          emailServiceSpy.calledWith(validClaim.claims[0])
-        );
-        emailServiceSpy.called.should.be.ok;
+      stub = sinon.stub().returns(true);
+      claimServiceWithMock = proxyquire("../../../src/services/claimService", {
+        "./emailService": {
+          handleEmailClaim: stub
+        }
       });
+    });
+    it("should call handle email with email type", async () => {
+      return claimServiceWithMock.default
+        .createClaimRequeset(validClaim)
+        .then(res => {
+          return stub.should.be.calledWith(args);
+        });
+    });
+    it("should return true", () => {
+      return claimServiceWithMock.default
+        .createClaimRequeset(validClaim)
+        .then(res => {
+          return res.should.be.true;
+        });
     });
   });
 });

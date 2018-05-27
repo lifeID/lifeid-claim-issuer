@@ -7,10 +7,16 @@ import * as R from "ramda";
 import * as mndid from "mndid";
 import * as Promise from "bluebird";
 import * as Accounts from "web3-eth-accounts";
-import emailService from "./emailService";
+import * as emailService from "./emailService";
+
 const accounts = new Accounts();
 
-const validClaims = { email: emailService.handleEmailClaim };
+const validClaims = [
+  {
+    type: "email",
+    handlerFunction: emailService.handleEmailClaim
+  }
+];
 
 function validateClaimRequest(
   claimRequest: ClaimCreateRequest
@@ -42,10 +48,14 @@ function _validateClaims(claimRequest: ClaimCreateRequest): ClaimCreateRequest {
 }
 
 function _validateClaim(claim: ClaimProperty): boolean {
-  if (!R.contains(claim.type, R.keys(validClaims))) {
+  if (!_findValidClaim(claim.type)) {
     throw new Error(`Claim type '${claim.type}' is not valid.`);
   }
   return true;
+}
+
+function _findValidClaim(type: string) {
+  return R.find(R.propEq("type", type))(validClaims);
 }
 
 function _validateSubject(
@@ -65,7 +75,7 @@ function _createVerifier(
   signature: string
 ): (unsignedClaimrequest: UnsignedClaimRequest) => Promise<boolean> {
   return (unsignedClaimRequest: UnsignedClaimRequest) => {
-    //TODO: Refactor this mama jama
+    // TODO: Refactor this mama jama
     return Promise.resolve()
       .then(() => {
         return Promise.all([
@@ -94,12 +104,21 @@ function _getPublicKeyFromDID(did: string): Promise<string> {
 }
 
 function _handleClaimTypes(claimRequest: ClaimCreateRequest): boolean {
-  R.map(_handleClaim, claimRequest.claims);
+  if (!R.map(_handleClaim, claimRequest.claims)) {
+    return false;
+  }
   return true;
 }
 
-function _handleClaim(claim: ClaimProperty) {
-  return validClaims[claim.type](claim);
+function _handleClaim(claim: ClaimProperty): boolean {
+  const claimHandler = _getClaimHandlerFunction(claim);
+  return claimHandler(claim);
+}
+
+function _getClaimHandlerFunction(
+  claim: ClaimProperty
+): (claim: ClaimProperty) => boolean {
+  return R.prop("handlerFunction", _findValidClaim(claim.type));
 }
 
 export default { validateClaimRequest, verifySignature, createClaimRequeset };

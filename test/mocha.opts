@@ -1,4 +1,5 @@
 --recursive
 --reporter spec
--r ts-node/register
+--require ts-node/register
+--require babel-register
 --watch-extensions ts

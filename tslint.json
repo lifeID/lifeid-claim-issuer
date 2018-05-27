@@ -6,7 +6,8 @@
     "no-console": false,
     "ordered-imports": false,
     "interface-name": [true, "never-prefix"],
-    "no-implicit-dependencies": [true, "dev"]
+    "no-implicit-dependencies": [false, "dev"],
+    "object-literal-sort-keys": false
   },
   "rulesDirectory": []
 }

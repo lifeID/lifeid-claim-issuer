@@ -3,11 +3,21 @@ import * as bodyParser from "body-parser";
 import * as express from "express";
 import * as methodOverride from "method-override";
 import { RegisterRoutes } from "./routes";
+import * as assert from "assert";
+import { pubsub } from "./events";
+assert(process.env.REDIS_URL, "process.env.REDIS_URL missing");
+
+pubsub.on("loggedIn", msg => {
+  console.log("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", msg);
+});
+
+import { RedisAdapter } from "./adaptors/redis_adaptor";
+const redis = new RedisAdapter("Session");
 
 const app = express();
 
-const swaggerUi = require("swagger-ui-express");
-const swaggerDocument = require("./swagger.json");
+import * as swaggerUi from "swagger-ui-express";
+const swaggerDocument = require("./swagger.json"); // tslint:disable-line
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 app.use(bodyParser.urlencoded({ extended: true }));
