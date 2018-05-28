@@ -19,6 +19,7 @@ import {
   Response
 } from "tsoa";
 import { reject } from "bluebird";
+import claimService from "../services/claimService";
 
 @Route("claims")
 export class ClaimController extends Controller {
@@ -28,8 +29,11 @@ export class ClaimController extends Controller {
     @Body() claimRequest: ClaimCreateRequest
   ): Promise<ClaimCreateResponse> {
     return Promise.resolve(claimRequest)
-      .then(() => ({
-        claimID: "123"
+      .then(claimService.validateClaimRequest)
+      .then(claimService.verifySignature)
+      .then(claimService.createClaimRequeset)
+      .then(res => ({
+        created: true
       }))
       .catch(err => {
         throw new ApiError("BadRequest", 400, err);

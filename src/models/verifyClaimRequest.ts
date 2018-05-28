@@ -1,4 +1,5 @@
 export interface VerifyClaimRequest {
   verificationCode: string;
-  claimID: string;
+  email: string;
+  claimType: string;
 }

@@ -6,17 +6,14 @@
   "types": "dist/server.d.ts",
   "scripts": {
     "start": "node ./dist/server.js",
-    "build":
-      "yarn run clean && yarn run swagger-gen && yarn run routes-gen && tsc",
-    "dev":
-      "nodemon -e ts --ignore 'routes.ts' --watch './src/' --exec \"yarn run build && yarn run start\"",
+    "build": "yarn run clean && yarn run swagger-gen && yarn run routes-gen && tsc",
+    "dev": "nodemon -e ts --ignore 'routes.ts' --watch './src/' --exec \"yarn run build && yarn run start\"",
     "clean": "rimraf dist",
     "lint": "tslint ./src/**/*.ts",
     "swagger-gen": "tsoa swagger",
     "routes-gen": "tsoa routes",
     "test": "BLUEBIRD_LONG_STACK_TRACES=1 mocha  './test/**/*.test.ts'",
-    "test-watch":
-      "BLUEBIRD_LONG_STACK_TRACES=1 mocha --watch  'test/**/*.test.ts'"
+    "test-watch": "BLUEBIRD_LONG_STACK_TRACES=1 mocha --watch  'test/**/*.test.ts'"
   },
   "author": "",
   "license": "ISC",
@@ -32,15 +29,15 @@
     "mocha": "^5.2.0",
     "nodemon": "^1.17.4",
     "prettier": "1.11.1",
+    "proxyquire": "^2.0.1",
     "sinon": "^5.0.10",
+    "sinon-chai": "^3.1.0",
     "timekeeper": "^2.1.2",
     "ts-node": "^5.0.1",
     "tslint": "^5.9.1",
     "tslint-config-prettier": "^1.10.0",
     "typescript": "^2.8.1",
-    "typings": "^2.1.1",
-    "proxyquire": "^2.0.1",
-    "sinon-chai": "^3.1.0"
+    "typings": "^2.1.1"
   },
   "dependencies": {
     "@types/ramda": "^0.25.28",
@@ -55,6 +52,7 @@
     "method-override": "^2.3.10",
     "mndid": "^1.0.7",
     "ncp": "^2.0.0",
+    "nodemailer": "^4.6.5",
     "ramda": "^0.25.0",
     "swagger-ui-express": "^3.0.8",
     "tsoa": "^2.1.4",

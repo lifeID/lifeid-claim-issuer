@@ -8,24 +8,36 @@ import { pubsub } from "../events";
 function handleEmailClaim(claim: ClaimProperty) {
   return Promise.resolve(claim)
     .then(_validateEmail)
-    .then(addTimestamp)
-    .then(wrapPropertyWithCode)
-    .tap(storeClaim)
-    .tap(sendEmail)
-    .then(() => true);
+    .then(_wrapPropertyWithCode)
+    .tap(_emitStoreClaim)
+    .tap(_emitSendEmail);
 }
 
-function addTimestamp(claimProperty: ClaimProperty): ClaimProperty {
-  return R.merge({ timestamp: `${new Date().getTime()}` }, claimProperty);
+function storeClaim(
+  storage,
+  claim: ClaimPropertyWithAccessCode
+): Promise<boolean> {
+  // store claim and expire in 1 day(86400 seconds)
+  return storage.upsert(claim.claimProperty.value, claim, 86400);
 }
-function wrapPropertyWithCode(
+
+function sendEmail(claim: ClaimPropertyWithAccessCode, emailer) {
+  return true;
+}
+
+function _wrapPropertyWithCode(
   claimProperty: ClaimProperty
 ): ClaimPropertyWithAccessCode {
   pubsub.emit("loggedIn", "test");
   return {
     code: _generateCode(),
+    timestamp: _getTimestamp(),
     claimProperty
   };
+}
+
+function _getTimestamp(): string {
+  return `${new Date().getTime()}`;
 }
 
 function _validateEmail(claimProperty): ClaimProperty {
@@ -35,12 +47,12 @@ function _validateEmail(claimProperty): ClaimProperty {
   return claimProperty;
 }
 
-function storeClaim(claimProperty: ClaimPropertyWithAccessCode): boolean {
+function _emitStoreClaim(claimProperty: ClaimPropertyWithAccessCode): boolean {
   pubsub.emit("Data:Store", JSON.stringify(claimProperty));
   return true;
 }
 
-function sendEmail(claimProperty: ClaimPropertyWithAccessCode): boolean {
+function _emitSendEmail(claimProperty: ClaimPropertyWithAccessCode): boolean {
   pubsub.emit("Email:Send", JSON.stringify(claimProperty));
   return true;
 }
@@ -53,4 +65,4 @@ function _getRandomInt(max) {
   return Math.floor(Math.random() * Math.floor(max));
 }
 
-export { handleEmailClaim, wrapPropertyWithCode, addTimestamp };
+export { handleEmailClaim, storeClaim };

@@ -58,6 +58,8 @@ class RedisAdapter implements InterfaceRedisAdapter {
     }
 
     const multi = client.multi();
+
+    console.log("stored: ", key, toStore);
     multi.hmset(key, toStore);
 
     if (expiresIn) {

@@ -10,11 +10,12 @@ export interface Signature {
 export interface ClaimProperty {
   type: string;
   value: string;
-  timestamp?: string;
 }
 
-export interface WrappedClaimProperty {
-  [code: string]: string;
+export interface ClaimPropertyWithAccessCode {
+  code: string;
+  claimProperty: ClaimProperty;
+  timestamp?: string;
 }
 
 export interface VerifiableClaim {

@@ -1,3 +1,3 @@
 export interface ClaimCreateResponse {
-  claimID: string;
+  created: boolean;
 }

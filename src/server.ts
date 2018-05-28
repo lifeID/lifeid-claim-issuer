@@ -1,4 +1,5 @@
 import "./controllers/claimController";
+import * as emailService from "./services/emailService";
 import * as bodyParser from "body-parser";
 import * as express from "express";
 import * as methodOverride from "method-override";
@@ -7,13 +8,13 @@ import * as assert from "assert";
 import { pubsub } from "./events";
 assert(process.env.REDIS_URL, "process.env.REDIS_URL missing");
 
-pubsub.on("loggedIn", msg => {
-  console.log("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", msg);
-});
-
 import { RedisAdapter } from "./adaptors/redis_adaptor";
 const redis = new RedisAdapter("Session");
 
+pubsub.on("Data:Store", data => {
+  console.log("called");
+  emailService.storeClaim(redis, JSON.parse(data));
+});
 const app = express();
 
 import * as swaggerUi from "swagger-ui-express";

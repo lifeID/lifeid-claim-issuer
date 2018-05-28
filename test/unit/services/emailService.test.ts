@@ -19,9 +19,9 @@ describe("emailService", () => {
     before(() => {
       validClaimProperty = { type: "email", value: "email@test.com" };
     });
-    it("should return true when email address is valid", () => {
+    it("should accept a valid email", () => {
       return emailService.handleEmailClaim(validClaimProperty).then(res => {
-        return res.should.be.true;
+        return res.should.not.throw;
       });
     });
     it("should throw an error when email is invalid", () => {
@@ -42,23 +42,25 @@ describe("emailService", () => {
     });
 
     it("should add a timestamp to claim property", () => {
-      const property = emailService.addTimestamp(validClaimProperty);
-      property.should.have.keys("timestamp", "type", "value");
+      return emailService.handleEmailClaim(validClaimProperty).then(res => {
+        return res.should.have.keys("timestamp", "code", "claimProperty");
+      });
     });
 
     it("should set the timestamp to the current time", () => {
-      const property = emailService.addTimestamp(validClaimProperty);
-      R.prop("timestamp", property).should.equal("1330688329321");
-    });
-    describe("wrapPropertyWithCode", () => {
-      it("should generate a unique code", () => {
-        const res = emailService.wrapPropertyWithCode(validClaimProperty);
-        res.code.should.match(/^\d{1,5}$/);
+      return emailService.handleEmailClaim(validClaimProperty).then(res => {
+        return R.prop("timestamp", res).should.equal("1330688329321");
       });
+    });
+    it("should generate a unique code", () => {
+      return emailService.handleEmailClaim(validClaimProperty).then(res => {
+        return res.code.should.match(/^\d{1,5}$/);
+      });
+    });
 
-      it("should wrap property", () => {
-        const res = emailService.wrapPropertyWithCode(validClaimProperty);
-        res.claimProperty.should.equal(validClaimProperty);
+    it("should wrap property", () => {
+      return emailService.handleEmailClaim(validClaimProperty).then(res => {
+        return res.claimProperty.should.equal(validClaimProperty);
       });
     });
     it("should save claim data", () => {

@@ -1,6 +1,8 @@
 // claimService
 
 import { ClaimCreateRequest } from "../models/claimCreateRequest";
+import { VerifyClaimRequest } from "../models/verifyClaimRequest";
+
 import { UnsignedClaimRequest } from "../models/unsignedClaimRequest";
 import { ClaimProperty } from "../models/claim";
 import * as R from "ramda";
@@ -26,6 +28,14 @@ function validateClaimRequest(
     .then(_validateSubject);
 }
 
+function validateVerifyClaimRequest(
+  verifyClaimRequest: VerifyClaimRequest
+): Promise<VerifyClaimRequest> {
+  return Promise.resolve(verifyClaimRequest).tap(vcr =>
+    _validateClaimType(vcr.claimType)
+  );
+}
+
 function verifySignature(
   claimRequest: ClaimCreateRequest
 ): Promise<ClaimCreateRequest> {
@@ -47,9 +57,13 @@ function _validateClaims(claimRequest: ClaimCreateRequest): ClaimCreateRequest {
   return claimRequest;
 }
 
-function _validateClaim(claim: ClaimProperty): boolean {
-  if (!_findValidClaim(claim.type)) {
-    throw new Error(`Claim type '${claim.type}' is not valid.`);
+function _validateClaim(claimRequest: ClaimProperty): boolean {
+  return _validateClaimType(claimRequest.type);
+}
+
+function _validateClaimType(claimType: string): boolean {
+  if (!_findValidClaim(claimType)) {
+    throw new Error(`Claim type '${claimType}' is not valid.`);
   }
   return true;
 }
@@ -121,4 +135,9 @@ function _getClaimHandlerFunction(
   return R.prop("handlerFunction", _findValidClaim(claim.type));
 }
 
-export default { validateClaimRequest, verifySignature, createClaimRequeset };
+export default {
+  validateClaimRequest,
+  verifySignature,
+  createClaimRequeset,
+  validateVerifyClaimRequest
+};

@@ -125,4 +125,48 @@ describe("claimService", () => {
         });
     });
   });
+  describe("validateVerifyClaimRequest", () => {
+    it("should accept a valid request", () => {
+      const validVerifyClaimRequest = {
+        verificationCode: "12345",
+        email: "testing@123.com",
+        claimType: "email"
+      };
+      return claimService
+        .validateVerifyClaimRequest(validVerifyClaimRequest)
+        .then(res => {
+          return res.should.not.throw;
+        });
+    });
+    it("should throw an error if invalid type", () => {
+      const invalidVerifyClaimRequest = {
+        verificationCode: "12345",
+        email: "testing@123.com",
+        claimType: "emole"
+      };
+      return claimService
+        .validateVerifyClaimRequest(invalidVerifyClaimRequest)
+        .then(res => {
+          throw new Error("this should not be called");
+        })
+        .catch(err => {
+          err.message.should.equal("Claim type 'emole' is not valid.");
+        });
+    });
+    it("should throw an code invalid on invalid code", () => {
+      const validVerifyClaimRequest = {
+        verificationCode: "12345",
+        email: "testing.com",
+        claimType: "email"
+      };
+      return claimService
+        .validateVerifyClaimRequest(validVerifyClaimRequest)
+        .then(res => {
+          throw new Error("this should not be called");
+        })
+        .catch(err => {
+          err.message.should.equal("");
+        });
+    });
+  });
 });

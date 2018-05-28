@@ -5,7 +5,7 @@ import { ClaimController } from './controllers/claimController';
 const models: TsoaRoute.Models = {
     "ClaimCreateResponse": {
         "properties": {
-            "claimID": { "dataType": "string", "required": true },
+            "created": { "dataType": "boolean", "required": true },
         },
     },
     "ClaimProperty": {
@@ -58,7 +58,8 @@ const models: TsoaRoute.Models = {
     "VerifyClaimRequest": {
         "properties": {
             "verificationCode": { "dataType": "string", "required": true },
-            "claimID": { "dataType": "string", "required": true },
+            "email": { "dataType": "string", "required": true },
+            "claimType": { "dataType": "string", "required": true },
         },
     },
 };
