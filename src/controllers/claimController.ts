@@ -6,6 +6,10 @@ import { ClaimCreateRequest } from "../models/claimCreateRequest";
 import { ClaimCreateResponse } from "../models/claimCreateResponse";
 import { ApiError } from "../ApiError";
 
+import * as Bluebird from "bluebird";
+
+import { RedisAdapter } from "../adaptors/redis_adaptor";
+
 import {
   Get,
   Post,
@@ -21,17 +25,22 @@ import {
 import { reject } from "bluebird";
 import claimService from "../services/claimService";
 
+const storage = new RedisAdapter("Session");
+
 @Route("claims")
 export class ClaimController extends Controller {
   @SuccessResponse("201", "Created") // Custom success response
+  @Response("400", "Bad request")
   @Post("request")
   public async createClaim(
     @Body() claimRequest: ClaimCreateRequest
   ): Promise<ClaimCreateResponse> {
-    return Promise.resolve(claimRequest)
+    return Bluebird.resolve(claimRequest)
       .then(claimService.validateClaimRequest)
       .then(claimService.verifySignature)
-      .then(claimService.createClaimRequeset)
+      .then(claimService.createClaimTicket)
+      .tap(claimTicket => claimService.storeClaimTicket(storage, claimTicket))
+      .tap(claimService.runCallbacks)
       .then(res => ({
         created: true
       }))
@@ -40,29 +49,17 @@ export class ClaimController extends Controller {
       });
   }
 
-  @SuccessResponse("201", "Created") // Custom success response
+  @SuccessResponse("200", "Created")
+  @Response("400", "Bad request")
   @Post("verify")
   public async verifyClaim(
     @Body() claimRequest: VerifyClaimRequest
   ): Promise<VerifyClaimResponse> {
-    return Promise.resolve(claimRequest)
-      .then(() => ({
-        verifiableClaim: {
-          id: "http://claim-issuer.com/claim/123",
-          type: ["Credential", "EmailCredential"],
-          issuer: "https:/claim-issuer.lifeid.io",
-          issued: "2010-1-1",
-          claim: [{ type: "email", value: "jon@123.com" }],
-          revocation: { id: "123", type: "uh" },
-          signature: {
-            type: "sometype",
-            created: "2016-06-18T21:19:10Z",
-            creator: "https:/claim-issuer.lifeid.io",
-            domain: "json.org",
-            nonce: "4234234234",
-            signatureValue: "asdfasdfasdf"
-          }
-        }
+    return Bluebird.resolve(claimRequest)
+      .then(claimService.validateVerifyClaimRequest)
+      .then(() => claimService.issueClaim(storage, claimRequest))
+      .then(claim => ({
+        verifiableClaim: claim
       }))
       .catch(err => {
         throw new ApiError("BadRequest", 400, err);

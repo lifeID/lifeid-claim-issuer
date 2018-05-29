@@ -5,6 +5,7 @@ export interface Signature {
   domain?: string;
   nonce: string;
   signatureValue: string;
+  signatureType: string;
 }
 
 export interface ClaimProperty {
@@ -24,13 +25,12 @@ export interface VerifiableClaim {
   name?: string;
   issuer: string;
   issued: string;
-  claim: ClaimProperty[];
+  claim: ClaimProperty;
   expires?: string;
   revocation?: Revocation;
-  signature: Signature;
+  signature?: Signature;
 }
 
 export interface Revocation {
-  id: string;
-  type: string;
+  key: string;
 }

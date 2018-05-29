@@ -16,15 +16,14 @@ const models: TsoaRoute.Models = {
     },
     "ClaimCreateRequest": {
         "properties": {
-            "claims": { "dataType": "array", "array": { "ref": "ClaimProperty" }, "required": true },
+            "claim": { "ref": "ClaimProperty", "required": true },
             "subject": { "dataType": "string", "required": true },
             "signature": { "dataType": "string", "required": true },
         },
     },
     "Revocation": {
         "properties": {
-            "id": { "dataType": "string", "required": true },
-            "type": { "dataType": "string", "required": true },
+            "key": { "dataType": "string", "required": true },
         },
     },
     "Signature": {
@@ -35,6 +34,7 @@ const models: TsoaRoute.Models = {
             "domain": { "dataType": "string" },
             "nonce": { "dataType": "string", "required": true },
             "signatureValue": { "dataType": "string", "required": true },
+            "signatureType": { "dataType": "string", "required": true },
         },
     },
     "VerifiableClaim": {
@@ -58,8 +58,8 @@ const models: TsoaRoute.Models = {
     "VerifyClaimRequest": {
         "properties": {
             "verificationCode": { "dataType": "string", "required": true },
-            "email": { "dataType": "string", "required": true },
-            "claimType": { "dataType": "string", "required": true },
+            "value": { "dataType": "string", "required": true },
+            "type": { "dataType": "string", "required": true },
         },
     },
 };
