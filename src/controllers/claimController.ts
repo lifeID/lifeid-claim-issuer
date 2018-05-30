@@ -66,6 +66,8 @@ export class ClaimController extends Controller {
       });
   }
 
+  @SuccessResponse("200", "Created")
+  @Response("400", "Bad request")
   @Get("{claimID}")
   public async getClaim(claimID: string): Promise<string> {
     return Bluebird.resolve(claimID)

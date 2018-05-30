@@ -99,7 +99,13 @@ function runCallbacks(claimTicket): void {
 function getClaimHash(storage, claimID: string): Promise<string> {
   return Promise.resolve(claimID)
     .then(claimID => _fetchClaim(storage, claimID))
-    .then(claim => claim.claimHash);
+    .catch(err => {
+      throw new Error("The claim was not found.");
+    })
+    .then(claim => claim.claimHash)
+    .catch(err => {
+      throw new Error(`Unexpected Error: ${err}`);
+    });
 }
 
 function _fetchClaim(storage, claimID: string) {
