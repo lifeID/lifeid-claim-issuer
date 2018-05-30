@@ -15,7 +15,7 @@ describe("claimService", () => {
   describe("validateClaimRequest", () => {
     it("should accept a valid claim request", () => {
       const validClaimRequest = {
-        claims: [{ type: "email", value: "john@travolta.com" }],
+        claim: { type: "email", value: "john@travolta.com" },
         subject: "did:life:980723459082734059723905",
         signature: "190879827259359ui899897asdf"
       };
@@ -26,7 +26,7 @@ describe("claimService", () => {
 
     it("should throw an error if claim type is not defined", () => {
       const invalidClaimRequest = {
-        claims: [{ type: "mail", value: "john@travolta.com" }],
+        claim: { type: "mail", value: "john@travolta.com" },
         subject: "did:life:980723459082734059723905",
         signature: "190879827259359ui899897asdf"
       };
@@ -39,9 +39,10 @@ describe("claimService", () => {
           err.message.should.equal("Claim type 'mail' is not valid.")
         );
     });
+
     it("should throw an error if subject is not a valid DID", () => {
       const invalidClaimRequest = {
-        claims: [{ type: "email", value: "john@travolta.com" }],
+        claim: { type: "email", value: "john@travolta.com" },
         subject: "did:life:9ag80723459082734059723905",
         signature: "190879827259359ui899897asdf"
       };
@@ -55,10 +56,11 @@ describe("claimService", () => {
         );
     });
   });
+
   describe("verifySignature", () => {
     it("should verify a valid signature", () => {
       const unsignedValidClaimRequest = {
-        claims: [{ type: "email", value: "john@travolta.com" }],
+        claim: { type: "email", value: "john@travolta.com" },
         subject: "did:life:11234Fd4014b81F5d1fDA1355F1bfbD14C812d3f8D22b04f0"
       };
       const privateKey =
@@ -76,7 +78,7 @@ describe("claimService", () => {
     });
     it("should throw an error on invalid signature", () => {
       const invalidClaimRequest = {
-        claims: [{ type: "email", value: "john@travolta.com" }],
+        claim: { type: "email", value: "john@travolta.com" },
         subject: "did:life:9ag80723459082734059723905",
         signature: "123235456"
       };
@@ -90,7 +92,7 @@ describe("claimService", () => {
         });
     });
   });
-  describe("createClaimRequeset", () => {
+  describe("createClaimTicket", () => {
     let claimServiceWithMock;
     let validClaim;
     let stub;
@@ -98,7 +100,7 @@ describe("claimService", () => {
     before(async () => {
       args = { type: "email", value: "john@travolta.com" };
       validClaim = {
-        claims: [args],
+        claim: args,
         subject: "did:life:11234Fd4014b81F5d1fDA1355F1bfbD14C812d3f8D22b04f0",
         signature:
           "0xa4648d9dc6bd841ad2991d99f0fe1cff6d44edca8b9cd3327e0306b031c844ce1c0938e4a7695909449c39f3fd1e5b69297496346bf784004d4374ba92debdfd1b"
@@ -112,38 +114,57 @@ describe("claimService", () => {
     });
     it("should call handle email with email type", async () => {
       return claimServiceWithMock.default
-        .createClaimRequeset(validClaim)
+        .createClaimTicket(validClaim)
         .then(res => {
-          return stub.should.be.calledWith(args);
+          return stub.should.be.called;
         });
     });
-    it("should return true", () => {
-      return claimServiceWithMock.default
-        .createClaimRequeset(validClaim)
-        .then(res => {
-          return res.should.be.true;
-        });
+
+    it("should add keys to claimTicket", () => {
+      return claimService.createClaimTicket(validClaim).then(res => {
+        return res.should.have.keys("timestamp", "code", "claim", "subject");
+      });
+    });
+
+    it("should set the timestamp to the current time", () => {
+      return claimService.createClaimTicket(validClaim).then(res => {
+        return R.prop("timestamp", res).should.equal("1330688329321");
+      });
     });
   });
   describe("validateVerifyClaimRequest", () => {
-    it("should accept a valid request", () => {
-      const validVerifyClaimRequest = {
+    let validVerifyClaimRequest;
+    let invalidVerifyClaimRequest;
+    let storage;
+    before(() => {
+      validVerifyClaimRequest = {
         verificationCode: "12345",
         email: "testing@123.com",
-        claimType: "email"
+        type: "email"
       };
+
+      invalidVerifyClaimRequest = {
+        verificationCode: "12345",
+        email: "testing@123.com",
+        type: "emole"
+      };
+    });
+    it("should accept a valid request", () => {
       return claimService
         .validateVerifyClaimRequest(validVerifyClaimRequest)
         .then(res => {
           return res.should.not.throw;
         });
     });
+
+    it("should issue claim on valid verification", () => {
+      return claimService
+        .issueClaim(storage, validVerifyClaimRequest)
+        .then(res => {
+          res.should.have.keys(["verifiableClaim"]);
+        });
+    });
     it("should throw an error if invalid type", () => {
-      const invalidVerifyClaimRequest = {
-        verificationCode: "12345",
-        email: "testing@123.com",
-        claimType: "emole"
-      };
       return claimService
         .validateVerifyClaimRequest(invalidVerifyClaimRequest)
         .then(res => {
@@ -151,21 +172,6 @@ describe("claimService", () => {
         })
         .catch(err => {
           err.message.should.equal("Claim type 'emole' is not valid.");
-        });
-    });
-    it("should throw an code invalid on invalid code", () => {
-      const validVerifyClaimRequest = {
-        verificationCode: "12345",
-        email: "testing.com",
-        claimType: "email"
-      };
-      return claimService
-        .validateVerifyClaimRequest(validVerifyClaimRequest)
-        .then(res => {
-          throw new Error("this should not be called");
-        })
-        .catch(err => {
-          err.message.should.equal("");
         });
     });
   });

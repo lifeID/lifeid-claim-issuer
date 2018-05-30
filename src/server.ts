@@ -7,14 +7,8 @@ import { RegisterRoutes } from "./routes";
 import * as assert from "assert";
 import { pubsub } from "./events";
 assert(process.env.REDIS_URL, "process.env.REDIS_URL missing");
+assert(process.env.PRIVATE_KEY, "process.env.PRIVATE_KEY missing");
 
-import { RedisAdapter } from "./adaptors/redis_adaptor";
-const redis = new RedisAdapter("Session");
-
-pubsub.on("Data:Store", data => {
-  console.log("called");
-  emailService.storeClaim(redis, JSON.parse(data));
-});
 const app = express();
 
 import * as swaggerUi from "swagger-ui-express";
@@ -34,7 +28,7 @@ app.use(
     res: express.Response,
     next: express.NextFunction
   ) => {
-    const status = err.status || 500;
+    const status = err.statusCode || 500;
     const body: any = {
       fields: err.fields || undefined,
       message: err.message || "An error occurred during the request.",

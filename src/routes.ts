@@ -16,14 +16,14 @@ const models: TsoaRoute.Models = {
     },
     "ClaimCreateRequest": {
         "properties": {
-            "claims": { "dataType": "array", "array": { "ref": "ClaimProperty" }, "required": true },
+            "claim": { "ref": "ClaimProperty", "required": true },
             "subject": { "dataType": "string", "required": true },
             "signature": { "dataType": "string", "required": true },
         },
     },
     "Revocation": {
         "properties": {
-            "id": { "dataType": "string", "required": true },
+            "key": { "dataType": "string", "required": true },
             "type": { "dataType": "string", "required": true },
         },
     },
@@ -35,6 +35,7 @@ const models: TsoaRoute.Models = {
             "domain": { "dataType": "string" },
             "nonce": { "dataType": "string", "required": true },
             "signatureValue": { "dataType": "string", "required": true },
+            "signatureType": { "dataType": "string", "required": true },
         },
     },
     "VerifiableClaim": {
@@ -44,10 +45,10 @@ const models: TsoaRoute.Models = {
             "name": { "dataType": "string" },
             "issuer": { "dataType": "string", "required": true },
             "issued": { "dataType": "string", "required": true },
-            "claim": { "dataType": "array", "array": { "ref": "ClaimProperty" }, "required": true },
+            "claim": { "ref": "ClaimProperty", "required": true },
             "expires": { "dataType": "string" },
             "revocation": { "ref": "Revocation" },
-            "signature": { "ref": "Signature", "required": true },
+            "signature": { "ref": "Signature" },
         },
     },
     "VerifyClaimResponse": {
@@ -58,8 +59,8 @@ const models: TsoaRoute.Models = {
     "VerifyClaimRequest": {
         "properties": {
             "verificationCode": { "dataType": "string", "required": true },
-            "email": { "dataType": "string", "required": true },
-            "claimType": { "dataType": "string", "required": true },
+            "value": { "dataType": "string", "required": true },
+            "type": { "dataType": "string", "required": true },
         },
     },
 };
@@ -101,6 +102,25 @@ export function RegisterRoutes(app: any) {
 
 
             const promise = controller.verifyClaim.apply(controller, validatedArgs);
+            promiseHandler(controller, promise, response, next);
+        });
+    app.get('/v1/claims/:claimID',
+        function(request: any, response: any, next: any) {
+            const args = {
+                claimID: { "in": "path", "name": "claimID", "required": true, "dataType": "string" },
+            };
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = getValidatedArgs(args, request);
+            } catch (err) {
+                return next(err);
+            }
+
+            const controller = new ClaimController();
+
+
+            const promise = controller.getClaim.apply(controller, validatedArgs);
             promiseHandler(controller, promise, response, next);
         });
 
