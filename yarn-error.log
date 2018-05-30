@@ -1,5 +1,5 @@
 Arguments: 
-  /usr/local/bin/node /usr/local/Cellar/yarn/1.5.1_1/libexec/bin/yarn.js run start
+  /usr/local/bin/node /usr/local/Cellar/yarn/1.5.1_1/libexec/bin/yarn.js run build
 
 PATH: 
   /Users/jonohrt/Projects/gssl/claim-issuer-api/node_modules/.bin:/Users/jonohrt/Projects/gssl/claim-issuer-api/node_modules/.bin:/Users/jonohrt/.config/yarn/link/node_modules/.bin:/Users/jonohrt/Projects/gssl/claim-issuer-api/node_modules/.bin:/Users/jonohrt/.config/yarn/link/node_modules/.bin:/usr/local/libexec/lib/node_modules/npm/bin/node-gyp-bin:/usr/local/lib/node_modules/npm/bin/node-gyp-bin:/usr/local/bin/node_modules/npm/bin/node-gyp-bin:/Users/jonohrt/Downloads/google-cloud-sdk/bin:/Users/jonohrt/go/bin:/Users/jonohrt/.cargo/bin:/Users/jonohrt/.bin:/Users/jonohrt/.rvm/gems/ruby-2.4.2/bin:/Users/jonohrt/.rvm/gems/ruby-2.4.2@global/bin:/Users/jonohrt/.rvm/rubies/ruby-2.4.2/bin:/Users/jonohrt/.cargo/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/opt/X11/bin:/Users/jonohrt/Downloads/google-cloud-sdk/bin:/Users/jonohrt/go/bin:/Users/jonohrt/.cargo/bin:/Users/jonohrt/.bin:/Users/jonohrt/.rvm/gems/ruby-2.4.2/bin:/Users/jonohrt/.rvm/gems/ruby-2.4.2@global/bin:/Users/jonohrt/.rvm/rubies/ruby-2.4.2/bin:/Users/jonohrt/.rvm/bin:/Users/jonohrt/.fzf/bin:/Users/jonohrt/Library/Android/sdk/tools:/Users/jonohrt/Library/Android/sdk/platform-tools:/Users/jonohrt/Projects/gssl/kubernetes/client/bin:/Users/jonohrt/bin:/Users/jonohrt/Library/Android/sdk/tools:/Users/jonohrt/Library/Android/sdk/platform-tools:/Users/jonohrt/Projects/gssl/kubernetes/client/bin:/Users/jonohrt/bin:/Users/jonohrt/.rvm/bin
@@ -53,8 +53,7 @@ npm manifest:
       "tslint": "^5.9.1",
       "tslint-config-prettier": "^1.10.0",
       "typescript": "^2.8.1",
-      "typings": "^2.1.1",
-      "web3-typescript-typings": "^0.10.2"
+      "typings": "^2.1.1"
     },
     "dependencies": {
       "@types/ramda": "^0.25.28",
@@ -62,6 +61,7 @@ npm manifest:
       "babel-register": "^6.26.0",
       "bluebird": "^3.5.1",
       "body-parser": "^1.18.2",
+      "date-fns": "^1.29.0",
       "email-validator": "^2.0.3",
       "express": "^4.16.3",
       "ioredis": "^3.2.2",
@@ -766,10 +766,6 @@ Lockfile:
     resolved "https://registry.yarnpkg.com/bcrypt-pbkdf/-/bcrypt-pbkdf-1.0.1.tgz#63bc5dcb61331b92bc05fd528953c33462a06f8d"
     dependencies:
       tweetnacl "^0.14.3"
-  
-  bignumber.js@~4.1.0:
-    version "4.1.0"
-    resolved "https://registry.yarnpkg.com/bignumber.js/-/bignumber.js-4.1.0.tgz#db6f14067c140bd46624815a7916c92d9b6c24b1"
   
   binary-extensions@^1.0.0:
     version "1.11.0"
@@ -5691,12 +5687,6 @@ Lockfile:
       web3-core-subscriptions "1.0.0-beta.34"
       web3-net "1.0.0-beta.34"
   
-  web3-typescript-typings@^0.10.2:
-    version "0.10.2"
-    resolved "https://registry.yarnpkg.com/web3-typescript-typings/-/web3-typescript-typings-0.10.2.tgz#a9903815d2a8a0dbd73fd5db374070de0bd30497"
-    dependencies:
-      bignumber.js "~4.1.0"
-  
   web3-utils@1.0.0-beta.34:
     version "1.0.0-beta.34"
     resolved "https://registry.yarnpkg.com/web3-utils/-/web3-utils-1.0.0-beta.34.tgz#9411fc39aaef39ca4e06169f762297d9ff020970"
@@ -5911,9 +5901,9 @@ Lockfile:
 
 Trace: 
   Error: Command failed.
-  Exit code: 1
+  Exit code: 2
   Command: sh
-  Arguments: -c node ./dist/server.js
+  Arguments: -c yarn run clean && yarn run swagger-gen && yarn run routes-gen && tsc
   Directory: /Users/jonohrt/Projects/gssl/claim-issuer-api
   Output:
   

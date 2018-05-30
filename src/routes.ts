@@ -24,6 +24,7 @@ const models: TsoaRoute.Models = {
     "Revocation": {
         "properties": {
             "key": { "dataType": "string", "required": true },
+            "type": { "dataType": "string", "required": true },
         },
     },
     "Signature": {
@@ -44,10 +45,10 @@ const models: TsoaRoute.Models = {
             "name": { "dataType": "string" },
             "issuer": { "dataType": "string", "required": true },
             "issued": { "dataType": "string", "required": true },
-            "claim": { "dataType": "array", "array": { "ref": "ClaimProperty" }, "required": true },
+            "claim": { "ref": "ClaimProperty", "required": true },
             "expires": { "dataType": "string" },
             "revocation": { "ref": "Revocation" },
-            "signature": { "ref": "Signature", "required": true },
+            "signature": { "ref": "Signature" },
         },
     },
     "VerifyClaimResponse": {
@@ -101,6 +102,25 @@ export function RegisterRoutes(app: any) {
 
 
             const promise = controller.verifyClaim.apply(controller, validatedArgs);
+            promiseHandler(controller, promise, response, next);
+        });
+    app.get('/v1/claims/:claimID',
+        function(request: any, response: any, next: any) {
+            const args = {
+                claimID: { "in": "path", "name": "claimID", "required": true, "dataType": "string" },
+            };
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = getValidatedArgs(args, request);
+            } catch (err) {
+                return next(err);
+            }
+
+            const controller = new ClaimController();
+
+
+            const promise = controller.getClaim.apply(controller, validatedArgs);
             promiseHandler(controller, promise, response, next);
         });
 

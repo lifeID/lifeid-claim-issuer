@@ -4,14 +4,20 @@ import { ClaimCreateRequest } from "../models/claimCreateRequest";
 import { VerifyClaimRequest } from "../models/verifyClaimRequest";
 
 import { UnsignedClaimRequest } from "../models/unsignedClaimRequest";
-import { ClaimProperty, VerifiableClaim } from "../models/claim";
-import { ClaimTicket } from "../models/claimTicket";
+import { ClaimProperty, VerifiableClaim, WrappedClaim } from "../models/claim";
+import { ClaimTicket, WrappedClaimTicket } from "../models/claimTicket";
 import * as R from "ramda";
 import * as mndid from "mndid";
 import * as Promise from "bluebird";
 import * as Accounts from "web3-eth-accounts";
 import * as emailService from "./emailService";
+import * as format from "date-fns/format";
+import { TIMEOUT } from "dns";
+import { TIMESTAMP_FORMAT } from "../constants";
+import { generateCode } from "./codeService";
 
+const Web3 = require("web3");
+const web3 = new Web3();
 const accounts = new Accounts();
 
 const validClaims = [
@@ -49,7 +55,11 @@ function issueClaim(
     .then(claimTicket =>
       _matchVerificationCode(claimTicket, verifyClaimRequest)
     )
-    .then(_createClaim);
+    .then(_createRevocationKey)
+    .then(_createClaimID)
+    .then(_createClaim)
+    .tap(wrappedClaim => _storeClaim(storage, wrappedClaim))
+    .then(wrappedClaim => wrappedClaim.claim);
 }
 
 function verifySignature(
@@ -86,6 +96,25 @@ function runCallbacks(claimTicket): void {
   R.map(callbackFunctions, fun => fun(claimTicket));
 }
 
+function getClaimHash(storage, claimID: string): Promise<string> {
+  return Promise.resolve(claimID)
+    .then(claimID => _fetchClaim(storage, claimID))
+    .then(claim => claim.claimHash);
+}
+
+function _fetchClaim(storage, claimID: string) {
+  return storage.find(claimID).then(JSON.parse);
+}
+
+function _storeClaim(storage, wrappedClaim: WrappedClaim): WrappedClaim {
+  storage.upsert(
+    wrappedClaim.claimID,
+    JSON.stringify({
+      claimHash: web3.utils.sha3(JSON.stringify(wrappedClaim.claim))
+    })
+  );
+  return wrappedClaim;
+}
 function _matchVerificationCode(
   claimTicket: ClaimTicket,
   verifyClaimRequest: VerifyClaimRequest
@@ -118,26 +147,74 @@ function _createClaimTicket(claimRequest: ClaimCreateRequest): ClaimTicket {
   };
 }
 
-function _generateClaimData(claimTicket: ClaimTicket) VerifiableClaim {
+function _createRevocationKey(claimTicket: ClaimTicket): WrappedClaimTicket {
+  const revocationKey = accounts.create(generateCode(9999999999999));
   return {
-    id: `${process.env.host}/claims/123`,
-    type: ["Credential", "EmailCredential"],
-    issuer: `${process.env.host}`,
-    issued: _getTimestamp(),
-    claim: claimTicket.claim,
-    revocation: { key: "123" },
+    revocationKey,
+    claimTicket
   };
-
 }
 
-function _generateSignature(unsignedClaim) {
- return {  signature: {
+function _createClaimID(
+  wrappedClaimTicket: WrappedClaimTicket
+): WrappedClaimTicket {
+  const code = generateCode(99999999);
+  return R.merge({ claimID: code }, wrappedClaimTicket);
+}
+
+function _createClaim(
+  wrappedClaimTicket: WrappedClaimTicket
+): Promise<WrappedClaim> {
+  return Promise.resolve(wrappedClaimTicket)
+    .then(() => _generateClaimData(wrappedClaimTicket))
+    .then(_signClaim);
+}
+
+function _generateClaimData(
+  wrappedClaimTicket: WrappedClaimTicket
+): WrappedClaim {
+  console.log(process.env);
+  return {
+    revocationKey: wrappedClaimTicket.revocationKey,
+    claimID: wrappedClaimTicket.claimID,
+    claim: {
+      id: `${process.env.HOST}/claims/${wrappedClaimTicket.claimID}`,
+      type: ["Credential", "EmailCredential"],
+      issuer: `${process.env.HOST}`,
+      issued: _getFormattedTimestamp(),
+      claim: wrappedClaimTicket.claimTicket.claim,
+      revocation: {
+        key: wrappedClaimTicket.revocationKey.address,
+        type: "Secp256k1"
+      }
+    }
+  };
+}
+
+function _signClaim(wrappedClaim: WrappedClaim): WrappedClaim {
+  const signature = accounts.sign(
+    JSON.stringify(wrappedClaim.claim),
+    process.env.PRIVATE_KEY
+  ).signature;
+
+  return R.mergeDeepLeft(wrappedClaim, {
+    claim: { signature: _createSignatureBlock(signature) }
+  });
+}
+
+function _createSignatureBlock(signature) {
+  return {
+    signature: {
       type: "Secp256k1",
-      created: "2016-06-18T21:19:10Z",
-      creator:`${process.env.host}`,
-      nonce: "4234234234",
-      signatureValue: "asdfasdfasdf"
-    } }
+      created: _getFormattedTimestamp(),
+      creator: `${process.env.HOST}`,
+      signatureValue: signature
+    }
+  };
+}
+
+function _getFormattedTimestamp() {
+  return format(new Date(), TIMESTAMP_FORMAT);
 }
 
 function _getTimestamp(): string {
@@ -252,5 +329,6 @@ export default {
   validateVerifyClaimRequest,
   storeClaimTicket,
   runCallbacks,
-  issueClaim
+  issueClaim,
+  getClaimHash
 };

@@ -1,10 +1,10 @@
 import * as emailValidator from "email-validator";
 import { ClaimProperty } from "../models/claim";
 import { ClaimTicket } from "../models/claimTicket";
-import * as leftPad from "left-pad";
 import * as R from "ramda";
 import * as Promise from "bluebird";
 import { pubsub } from "../events";
+import { generateCode } from "./codeService";
 
 function handleEmailClaim(claimTicket: ClaimTicket): Promise<ClaimTicket> {
   return Promise.resolve(claimTicket).then(_addAccessCode);
@@ -26,15 +26,7 @@ function validateClaim(claimTicket: ClaimTicket): Promise<boolean> {
     .then(() => true);
 }
 function _addAccessCode(claimTicket: ClaimTicket): ClaimTicket {
-  return R.merge({ code: _generateCode() }, claimTicket);
-}
-
-function _generateCode() {
-  return leftPad(_getRandomInt(99999), 5, 0);
-}
-
-function _getRandomInt(max) {
-  return Math.floor(Math.random() * Math.floor(max));
+  return R.merge({ code: generateCode(99999) }, claimTicket);
 }
 
 export { handleEmailClaim, validateClaim, sendEmail };

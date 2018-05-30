@@ -33,4 +33,11 @@ export interface VerifiableClaim {
 
 export interface Revocation {
   key: string;
+  type: string;
+}
+
+export interface WrappedClaim {
+  revocationKey?: any;
+  claimID?: string;
+  claim: VerifiableClaim;
 }

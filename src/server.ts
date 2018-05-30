@@ -7,6 +7,7 @@ import { RegisterRoutes } from "./routes";
 import * as assert from "assert";
 import { pubsub } from "./events";
 assert(process.env.REDIS_URL, "process.env.REDIS_URL missing");
+assert(process.env.PRIVATE_KEY, "process.env.PRIVATE_KEY missing");
 
 const app = express();
 

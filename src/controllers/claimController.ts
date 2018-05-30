@@ -65,4 +65,13 @@ export class ClaimController extends Controller {
         throw new ApiError("BadRequest", 400, err);
       });
   }
+
+  @Get("{claimID}")
+  public async getClaim(claimID: string): Promise<string> {
+    return Bluebird.resolve(claimID)
+      .then(claimID => claimService.getClaimHash(storage, claimID))
+      .catch(err => {
+        throw new ApiError("BadRequest", 400, err);
+      });
+  }
 }
