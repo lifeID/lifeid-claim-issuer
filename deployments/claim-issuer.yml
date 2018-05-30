@@ -30,7 +30,7 @@ spec:
         ports:
         - name: node
           containerPort: 3000
-        image: us.gcr.io/lifeid-dev/claim-issuer:1.0.7
+        image: us.gcr.io/lifeid-dev/claim-issuer:1.0.8
         env:
           - name: REDIS_URL
             valueFrom:
