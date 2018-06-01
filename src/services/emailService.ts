@@ -26,7 +26,7 @@ function validateClaim(claimTicket: ClaimTicket): Promise<boolean> {
     .then(() => true);
 }
 function _addAccessCode(claimTicket: ClaimTicket): ClaimTicket {
-  return R.merge({ code: generateCode(99999) }, claimTicket);
+  return R.merge({ code: generateCode(999999) }, claimTicket);
 }
 
 export { handleEmailClaim, validateClaim, sendEmail };
