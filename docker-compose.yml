@@ -1,0 +1,10 @@
+version: '0.1'
+services:
+  claim_issuer_server:
+    build: .
+    ports:
+     - "3000:3000"
+    volumes:
+     - .:/src
+    env_file: 
+     - .env
