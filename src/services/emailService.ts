@@ -10,8 +10,18 @@ function handleEmailClaim(claimTicket: ClaimTicket): Promise<ClaimTicket> {
   return Promise.resolve(claimTicket).then(_addAccessCode);
 }
 
-function sendEmail(claim: ClaimTicket, emailer) {
-  return true;
+function sendEmail(claim: ClaimTicket) {
+  const message = {
+    from: "example@example.com", // sender address
+    to: "bar@example.com, baz@example.com", // list of receivers
+    subject: "Hello ✔", // Subject line
+    text: "Hello world?", // plain text body
+    html: `<b>${claim.code}</b>` // html body
+  };
+  pubsub.emit("email", message);
+  console.log("called!");
+
+  return console.log("hello!");
 }
 
 function validateClaim(claimTicket: ClaimTicket): Promise<boolean> {
