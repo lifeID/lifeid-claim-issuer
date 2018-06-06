@@ -6,17 +6,14 @@
   "types": "dist/server.d.ts",
   "scripts": {
     "start": "node ./dist/server.js",
-    "build":
-      "yarn run clean && yarn run swagger-gen && yarn run routes-gen && tsc",
-    "dev":
-      "nodemon -e -L ts --ignore 'routes.ts' --watch './src/' --exec \"yarn run build && yarn run start\"",
+    "build": "yarn run clean && yarn run swagger-gen && yarn run routes-gen && tsc",
+    "dev": "nodemon -e -L ts --ignore 'routes.ts' --watch './src/' --exec \"yarn run build && yarn run start\"",
     "clean": "rimraf dist",
     "lint": "tslint ./src/**/*.ts",
     "swagger-gen": "tsoa swagger",
     "routes-gen": "tsoa routes",
     "test": "BLUEBIRD_LONG_STACK_TRACES=1 mocha  './test/**/*.test.ts'",
-    "test-watch":
-      "BLUEBIRD_LONG_STACK_TRACES=1 mocha --watch  'test/**/*.test.ts'"
+    "test-watch": "BLUEBIRD_LONG_STACK_TRACES=1 mocha --watch  'test/**/*.test.ts'"
   },
   "author": "",
   "license": "ISC",
@@ -48,6 +45,7 @@
     "babel-register": "^6.26.0",
     "bluebird": "^3.5.1",
     "body-parser": "^1.18.2",
+    "chalk": "^2.4.1",
     "date-fns": "^1.29.0",
     "email-validator": "^2.0.3",
     "express": "^4.16.3",
