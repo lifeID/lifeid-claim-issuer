@@ -93,8 +93,6 @@ function storeClaimTicket(
 
 function runCallbacks(claimTicket): void {
   const callbackFunctions = _getCallbackFunctions(claimTicket.claim);
-  console.dir("running callbacks", callbackFunctions);
-  console.log("callbackFunctions[0]", callbackFunctions[0]);
   console.log("this is the claimTicket: ", claimTicket);
   R.juxt(callbackFunctions)(claimTicket);
   // R.map(callbackFunctions, fun => fun(claimTicket));

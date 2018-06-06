@@ -11,10 +11,10 @@ function handleEmailClaim(claimTicket: ClaimTicket): Promise<ClaimTicket> {
 }
 
 function sendEmail(claim: ClaimTicket) {
-  console.log("called!");
+  console.log("called!!");
   const message = {
     from: "example@example.com", // sender address
-    to: "bar@example.com, baz@example.com", // list of receivers
+    to: "seth@lifeid.io", // list of receivers
     subject: "Hello ✔", // Subject line
     text: "Hello world?", // plain text body
     html: `<b>${claim.code}</b>` // html body
