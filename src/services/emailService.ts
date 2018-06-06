@@ -11,17 +11,15 @@ function handleEmailClaim(claimTicket: ClaimTicket): Promise<ClaimTicket> {
 }
 
 function sendEmail(claim: ClaimTicket) {
-  console.log("called!!");
   const message = {
-    from: "example@example.com", // sender address
+    from: "noreply-lifeid.io", // sender address
     to: "seth@lifeid.io", // list of receivers
     subject: "Hello ✔", // Subject line
-    text: "Hello world?", // plain text body
+    text: "It's the plain text body", // plain text body
     html: `<b>${claim.code}</b>` // html body
   };
   pubsub.emit("email", message);
-
-  return console.log("great");
+  return;
 }
 
 function validateClaim(claimTicket: ClaimTicket): Promise<boolean> {

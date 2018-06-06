@@ -93,9 +93,7 @@ function storeClaimTicket(
 
 function runCallbacks(claimTicket): void {
   const callbackFunctions = _getCallbackFunctions(claimTicket.claim);
-  console.log("this is the claimTicket: ", claimTicket);
   R.juxt(callbackFunctions)(claimTicket);
-  // R.map(callbackFunctions, fun => fun(claimTicket));
 }
 
 function getClaimHash(storage, claimID: string): Promise<string> {
