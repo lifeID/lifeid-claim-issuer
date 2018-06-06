@@ -5,6 +5,6 @@ services:
     ports:
      - "3000:3000"
     volumes:
-     - .:/src
+     - ./src:/usr/src/app/src
     env_file: 
      - .env

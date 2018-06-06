@@ -93,7 +93,7 @@ function storeClaimTicket(
 
 function runCallbacks(claimTicket): void {
   const callbackFunctions = _getCallbackFunctions(claimTicket.claim);
-  R.map(callbackFunctions, fun => fun(claimTicket));
+  R.juxt(callbackFunctions)(claimTicket);
 }
 
 function getClaimHash(storage, claimID: string): Promise<string> {
@@ -319,9 +319,7 @@ function _getClaimHandlerFunction(
   return R.prop("handlerFunction", _findValidClaim(claim.type));
 }
 
-function _getCallbackFunctions(
-  claim: ClaimProperty
-): (claim: ClaimTicket) => ClaimTicket {
+function _getCallbackFunctions(claim: ClaimProperty) {
   return R.prop("callbackFunctions", _findValidClaim(claim.type));
 }
 

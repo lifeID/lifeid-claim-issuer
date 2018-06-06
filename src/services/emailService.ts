@@ -10,8 +10,16 @@ function handleEmailClaim(claimTicket: ClaimTicket): Promise<ClaimTicket> {
   return Promise.resolve(claimTicket).then(_addAccessCode);
 }
 
-function sendEmail(claim: ClaimTicket, emailer) {
-  return true;
+function sendEmail(claim: ClaimTicket) {
+  const message = {
+    from: "noreply-lifeid.io", // sender address
+    to: "seth@lifeid.io", // list of receivers
+    subject: "Hello ✔", // Subject line
+    text: "It's the plain text body", // plain text body
+    html: `<b>${claim.code}</b>` // html body
+  };
+  pubsub.emit("email", message);
+  return;
 }
 
 function validateClaim(claimTicket: ClaimTicket): Promise<boolean> {
