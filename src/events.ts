@@ -5,10 +5,7 @@ assert(process.env.USER, "process.env.USER missing");
 assert(process.env.PASS, "process.env.PASS missing");
 
 const stmpConfig = {
-  pool: true,
-  host: "stmp.gmail.com",
-  port: "587", // google's tls port, for ssl use 465
-  secure: true,
+  service: "Gmail",
   auth: {
     user: process.env.USER,
     pass: process.env.PASS
@@ -16,7 +13,7 @@ const stmpConfig = {
 };
 
 const transporter = nodemailer.createTransport(stmpConfig);
-const sendEmail = message => transporter.sendMail(message);
+const sendEmail = message => transporter.sendMail(message).catch(console.log);
 const pubsub = new EventEmitter();
 
 pubsub.on("email", sendEmail);

@@ -11,6 +11,7 @@ function handleEmailClaim(claimTicket: ClaimTicket): Promise<ClaimTicket> {
 }
 
 function sendEmail(claim: ClaimTicket) {
+  console.log("called!");
   const message = {
     from: "example@example.com", // sender address
     to: "bar@example.com, baz@example.com", // list of receivers
@@ -19,9 +20,8 @@ function sendEmail(claim: ClaimTicket) {
     html: `<b>${claim.code}</b>` // html body
   };
   pubsub.emit("email", message);
-  console.log("called!");
 
-  return console.log("hello!");
+  return console.log("great");
 }
 
 function validateClaim(claimTicket: ClaimTicket): Promise<boolean> {

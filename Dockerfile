@@ -6,4 +6,4 @@ COPY . .
 RUN yarn run clean && yarn run tsoa swagger && yarn run tsoa routes && yarn run tsc
 
 EXPOSE 3000
-ENTRYPOINT ["yarn", "start" ]
+ENTRYPOINT ["yarn", "dev" ]
