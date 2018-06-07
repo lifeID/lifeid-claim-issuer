@@ -10,6 +10,7 @@ spec:
     - protocol: TCP
       port: 80
       targetPort: node
+      name: web
   type: LoadBalancer
 ---
 apiVersion: apps/v1beta1
@@ -30,13 +31,23 @@ spec:
         ports:
         - name: node
           containerPort: 3000
-        image: us.gcr.io/lifeid-dev/claim-issuer:1.0.11
+        image: us.gcr.io/lifeid-dev/claim-issuer:1.0.17
         env:
           - name: REDIS_URL
             valueFrom:
               configMapKeyRef:
                 name: claim-issuer-config
                 key: redisUrl
+          - name: USER
+            valueFrom:
+              configMapKeyRef:
+                name: claim-issuer-config
+                key: user
+          - name: PASS
+            valueFrom:
+              configMapKeyRef:
+                name: claim-issuer-config
+                key: pass
           - name: HOST
             valueFrom:
               configMapKeyRef:

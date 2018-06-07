@@ -12,11 +12,11 @@ function handleEmailClaim(claimTicket: ClaimTicket): Promise<ClaimTicket> {
 
 function sendEmail(claim: ClaimTicket) {
   const message = {
-    from: "noreply-lifeid.io", // sender address
-    to: "seth@lifeid.io", // list of receivers
-    subject: "Hello ✔", // Subject line
-    text: "It's the plain text body", // plain text body
-    html: `<b>${claim.code}</b>` // html body
+    from: "noreply@lifeid.io", // sender address
+    to: claim.claim.value, // list of receivers
+    subject: "LifeID email confirmation", // Subject line
+    text: `Your email confirmation code is ${claim.code}`, // plain text body
+    html: `LifeID has sent you an email confirmation code: <b>${claim.code}</b>` // html body
   };
   pubsub.emit("email", message);
   return;
