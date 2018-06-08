@@ -1,7 +1,9 @@
 import { EventEmitter } from "events";
-import { SendEmail } from "./emailConfig";
+import { sendEmail } from "./services/emailService";
 const pubsub = new EventEmitter();
 
-pubsub.on("email", SendEmail);
+function setupEvents() {
+  pubsub.on("email:sendConfirmationEmail", sendEmail);
+}
 
-export { pubsub };
+export { pubsub, setupEvents };

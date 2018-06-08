@@ -2,6 +2,7 @@
 
 import { ClaimCreateRequest } from "../models/claimCreateRequest";
 import { VerifyClaimRequest } from "../models/verifyClaimRequest";
+import { RedisAdapter } from "../adaptors/redis_adaptor";
 
 import { UnsignedClaimRequest } from "../models/unsignedClaimRequest";
 import { ClaimProperty, VerifiableClaim, WrappedClaim } from "../models/claim";
@@ -11,12 +12,15 @@ import * as mndid from "mndid";
 import * as Promise from "bluebird";
 import * as Accounts from "web3-eth-accounts";
 import * as emailService from "./emailService";
-import * as format from "date-fns/format";
+import { format } from "date-fns";
 import { TIMEOUT } from "dns";
 import { TIMESTAMP_FORMAT } from "../constants";
 import { generateCode } from "./codeService";
+import { pubsub } from "../events";
 
-const Web3 = require("web3");
+const storage = new RedisAdapter("Session");
+
+const Web3 = require("web3"); //tslint:disable-line
 const web3 = new Web3();
 const accounts = new Accounts();
 
@@ -25,7 +29,7 @@ const validClaims = [
     type: "email",
     validationFunction: emailService.validateClaim,
     handlerFunction: emailService.handleEmailClaim,
-    callbackFunctions: [emailService.sendEmail]
+    callbackEvents: ["email:sendConfirmationEmail"]
   }
 ];
 
@@ -47,18 +51,17 @@ function validateVerifyClaimRequest(
 }
 
 function issueClaim(
-  storage,
   verifyClaimRequest: VerifyClaimRequest
 ): Promise<VerifiableClaim> {
   return Promise.resolve(verifyClaimRequest)
-    .then(claimRequest => _fetchClaimTicket(storage, claimRequest))
+    .then(claimRequest => _fetchClaimTicket(claimRequest))
     .then(claimTicket =>
       _matchVerificationCode(claimTicket, verifyClaimRequest)
     )
     .then(_createRevocationKey)
     .then(_createClaimID)
     .then(_createClaim)
-    .tap(wrappedClaim => _storeClaim(storage, wrappedClaim))
+    .tap(wrappedClaim => _storeClaim(wrappedClaim))
     .then(wrappedClaim => wrappedClaim.claim);
 }
 
@@ -75,16 +78,12 @@ function verifySignature(
 function createClaimTicket(
   claimRequest: ClaimCreateRequest
 ): Promise<ClaimTicket> {
-  const _handleClaim = _getClaimHandlerFunction(claimRequest.claim);
   return Promise.resolve(claimRequest)
     .then(_createClaimTicket)
     .then(_handleClaimTicket);
 }
 
-function storeClaimTicket(
-  storage,
-  claimTicket: ClaimTicket
-): Promise<ClaimTicket> {
+function storeClaimTicket(claimTicket: ClaimTicket): Promise<ClaimTicket> {
   // store claim and expire in 1 day(86400 seconds)
   return storage
     .upsert(claimTicket.claim.value, claimTicket, 86400)
@@ -92,29 +91,33 @@ function storeClaimTicket(
 }
 
 function runCallbacks(claimTicket): void {
-  const callbackFunctions = _getCallbackFunctions(claimTicket.claim);
-  R.juxt(callbackFunctions)(claimTicket);
+  const callbackEvents = _getCallbackEvents(claimTicket.claim);
+  R.map(event => {
+    pubsub.emit(event, claimTicket);
+  }, callbackEvents);
 }
 
-function getClaimHash(storage, claimID: string): Promise<string> {
-  return Promise.resolve(claimID)
-    .then(claimID => _fetchClaim(storage, claimID))
+function getClaimHash(claimID: string): Promise<string> {
+  return Promise.resolve()
+    .then(() => _fetchClaim(claimID))
     .then(claim => claim.claimHash)
     .catch(err => {
       throw new Error("The claim was not found.");
     });
 }
 
-function _fetchClaim(storage, claimID: string) {
+function _fetchClaim(claimID: string) {
   return storage.find(claimID).then(JSON.parse);
 }
 
-function _storeClaim(storage, wrappedClaim: WrappedClaim): WrappedClaim {
+function _storeClaim(wrappedClaim: WrappedClaim): WrappedClaim {
+  console.log("Storing hash of ", JSON.stringify(wrappedClaim.claim));
   storage.upsert(
     wrappedClaim.claimID,
     JSON.stringify({
       claimHash: web3.utils.sha3(JSON.stringify(wrappedClaim.claim))
-    })
+    }),
+    10000000
   );
   return wrappedClaim;
 }
@@ -129,7 +132,6 @@ function _matchVerificationCode(
 }
 
 function _fetchClaimTicket(
-  storage,
   claimRequest: VerifyClaimRequest
 ): Promise<ClaimTicket> {
   return Promise.resolve()
@@ -319,8 +321,8 @@ function _getClaimHandlerFunction(
   return R.prop("handlerFunction", _findValidClaim(claim.type));
 }
 
-function _getCallbackFunctions(claim: ClaimProperty) {
-  return R.prop("callbackFunctions", _findValidClaim(claim.type));
+function _getCallbackEvents(claim: ClaimProperty) {
+  return R.prop("callbackEvents", _findValidClaim(claim.type));
 }
 
 export default {

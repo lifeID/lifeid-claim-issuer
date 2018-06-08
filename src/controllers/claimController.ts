@@ -8,8 +8,6 @@ import { ApiError } from "../ApiError";
 
 import * as Bluebird from "bluebird";
 
-import { RedisAdapter } from "../adaptors/redis_adaptor";
-
 import {
   Get,
   Post,
@@ -22,10 +20,7 @@ import {
   Controller,
   Response
 } from "tsoa";
-import { reject } from "bluebird";
 import claimService from "../services/claimService";
-
-const storage = new RedisAdapter("Session");
 
 @Route("claims")
 export class ClaimController extends Controller {
@@ -39,7 +34,7 @@ export class ClaimController extends Controller {
       .then(claimService.validateClaimRequest)
       .then(claimService.verifySignature)
       .then(claimService.createClaimTicket)
-      .tap(claimTicket => claimService.storeClaimTicket(storage, claimTicket))
+      .tap(claimTicket => claimService.storeClaimTicket(claimTicket))
       .tap(claimService.runCallbacks)
       .then(res => ({
         created: true
@@ -57,7 +52,7 @@ export class ClaimController extends Controller {
   ): Promise<VerifyClaimResponse> {
     return Bluebird.resolve(claimRequest)
       .then(claimService.validateVerifyClaimRequest)
-      .then(() => claimService.issueClaim(storage, claimRequest))
+      .then(() => claimService.issueClaim(claimRequest))
       .then(claim => ({
         verifiableClaim: claim
       }))
@@ -71,7 +66,7 @@ export class ClaimController extends Controller {
   @Get("{claimID}")
   public async getClaim(claimID: string): Promise<string> {
     return Bluebird.resolve(claimID)
-      .then(claimID => claimService.getClaimHash(storage, claimID))
+      .then(claimID => claimService.getClaimHash(claimID)) // tslint:disable-line
       .catch(err => {
         throw new ApiError("BadRequest", 400, err);
       });
