@@ -35,7 +35,7 @@ export class ClaimController extends Controller {
       .then(claimService.verifySignature)
       .then(claimService.createClaimTicket)
       .tap(claimTicket => claimService.storeClaimTicket(claimTicket))
-      .tap(claimService.runCallbacks)
+      .tap(claimService.emitCallbackEvents)
       .then(res => ({
         created: true
       }))

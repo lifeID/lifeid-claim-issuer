@@ -90,7 +90,7 @@ function storeClaimTicket(claimTicket: ClaimTicket): Promise<ClaimTicket> {
     .then(() => claimTicket);
 }
 
-function runCallbacks(claimTicket): void {
+function emitCallbackEvents(claimTicket): void {
   const callbackEvents = _getCallbackEvents(claimTicket.claim);
   R.map(event => {
     pubsub.emit(event, claimTicket);
@@ -331,7 +331,7 @@ export default {
   createClaimTicket,
   validateVerifyClaimRequest,
   storeClaimTicket,
-  runCallbacks,
+  emitCallbackEvents,
   issueClaim,
   getClaimHash
 };
