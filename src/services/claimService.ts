@@ -183,7 +183,7 @@ function _generateClaimData(
     revocationKey: wrappedClaimTicket.revocationKey,
     claimID: wrappedClaimTicket.claimID,
     claim: {
-      id: `${process.env.HOST}/claims/${wrappedClaimTicket.claimID}`,
+      id: `${process.env.HOST}/v1/claims/${wrappedClaimTicket.claimID}`,
       type: ["Credential", "EmailCredential"],
       issuer: `${process.env.HOST}`,
       issued: _getFormattedTimestamp(),

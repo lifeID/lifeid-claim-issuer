@@ -6,10 +6,12 @@ import * as methodOverride from "method-override";
 import { RegisterRoutes } from "./routes";
 import * as assert from "assert";
 import * as events from "./events";
+import { PORT } from "./constants";
 assert(process.env.REDIS_URL, "process.env.REDIS_URL missing");
 assert(process.env.PRIVATE_KEY, "process.env.PRIVATE_KEY missing");
 assert(process.env.USER, "process.env.USER missing");
 assert(process.env.PASS, "process.env.PASS missing");
+assert(process.env.PORT, "a process.env.PORT must be set");
 
 const app = express();
 
@@ -46,5 +48,5 @@ events.setupEvents();
 emailService.verifyNodemailer();
 
 /* tslint:disable-next-line */
-console.log("Starting server on port 3000...");
-app.listen(3000, "0.0.0.0");
+console.log(`Starting server on port ${PORT}...`);
+app.listen(PORT);

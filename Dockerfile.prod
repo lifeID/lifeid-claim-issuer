@@ -6,5 +6,5 @@ COPY . .
 ENV HOSTNAME 35.199.171.131
 RUN yarn run clean && yarn run tsoa swagger --host $HOSTNAME && yarn run tsoa routes --host $HOSTNAME && yarn run tsc
 
-EXPOSE 3000
+EXPOSE $PORT
 ENTRYPOINT ["yarn", "start" ]

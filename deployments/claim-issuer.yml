@@ -30,9 +30,14 @@ spec:
       - name: claim-issuer
         ports:
         - name: node
-          containerPort: 3000
-        image: us.gcr.io/lifeid-dev/claim-issuer:1.0.19
+          containerPort: 9000
+        image: us.gcr.io/lifeid-dev/claim-issuer:1.0.20
         env:
+          - name: PORT
+            valueFrom:
+              configMapKeyRef:
+                name: claim-issuer-config
+                key: port
           - name: REDIS_URL
             valueFrom:
               configMapKeyRef:
