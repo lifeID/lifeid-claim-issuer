@@ -2,3 +2,5 @@
 node_modules
 dist
 .env
+telepresence.log
+yarn-error.log
