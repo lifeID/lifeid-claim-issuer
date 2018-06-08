@@ -1,6 +1,6 @@
-# Typescript starter
+# lifeID claim issuer server
 
-This is a simple typescript starter. This project should be a work in progress as we refine our typescript config. This project should be used for open source projects and does not assume the user will be using any particular editor(eg. vscode), although editor specific config is include.
+This is the beginning of the lifeid claim issuer server. It will eventually become a general purpose tool to issue verified credentials.
 
 ## Build
 
@@ -21,4 +21,3 @@ This project uses:
 * Mocha
 * Chai
 * Prettier
-* Tslint Config Prettier(to manage conflicts between tslint and prettier)
