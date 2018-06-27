@@ -187,7 +187,7 @@ function _generateClaimData(
       type: ["Credential", "EmailCredential"],
       issuer: `${process.env.HOST}`,
       issued: _getFormattedTimestamp(),
-      claim: wrappedClaimTicket.claimTicket.claim,
+      claims: [wrappedClaimTicket.claimTicket.claim],
       revocation: {
         key: wrappedClaimTicket.revocationKey.address,
         type: "Secp256k1"

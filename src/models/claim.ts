@@ -25,7 +25,7 @@ export interface VerifiableClaim {
   name?: string;
   issuer: string;
   issued: string;
-  claim: ClaimProperty;
+  claims: ClaimProperty[];
   expires?: string;
   revocation?: Revocation;
   signature?: Signature;
