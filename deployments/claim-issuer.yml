@@ -31,7 +31,7 @@ spec:
         ports:
         - name: node
           containerPort: 9000
-        image: us.gcr.io/lifeid-dev/claim-issuer:1.0.25.demo
+        image: us.gcr.io/lifeid-dev/claim-issuer:1.0.27.demo
         env:
           - name: PORT
             valueFrom:
@@ -42,7 +42,12 @@ spec:
             valueFrom:
               configMapKeyRef:
                 name: claim-issuer-config
-                key: redis_url
+                key: redisUrl
+          - name: API_BRIDGE_ADDRESS
+            valueFrom:
+              configMapKeyRef:
+                name: claim-issuer-config
+                key: apiBridgeAddress
           - name: USER
             valueFrom:
               configMapKeyRef:

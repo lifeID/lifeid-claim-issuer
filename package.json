@@ -53,6 +53,7 @@
     "method-override": "^2.3.10",
     "mndid": "^1.0.7",
     "ncp": "^2.0.0",
+    "node-fetch": "^2.1.2",
     "nodemailer": "^4.6.5",
     "ramda": "^0.25.0",
     "swagger-ui-express": "^3.0.8",

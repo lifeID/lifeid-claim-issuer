@@ -26,6 +26,7 @@ function handleEmailClaim(claimTicket: ClaimTicket): Promise<ClaimTicket> {
 }
 
 function sendEmail(claimTicket: ClaimTicket) {
+  console.log("sending email");
   return Promise.resolve(claimTicket)
     .then(_buildEmailMessage)
     .then(_sendMessageFromSendgrid);

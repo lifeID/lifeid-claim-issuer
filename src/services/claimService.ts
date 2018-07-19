@@ -1,5 +1,3 @@
-// claimService
-
 import { ClaimCreateRequest } from "../models/claimCreateRequest";
 import { VerifyClaimRequest } from "../models/verifyClaimRequest";
 import { RedisAdapter } from "../adaptors/redis_adaptor";
@@ -17,6 +15,7 @@ import { TIMEOUT } from "dns";
 import { TIMESTAMP_FORMAT } from "../constants";
 import { generateCode } from "./codeService";
 import { pubsub } from "../events";
+import fetch from "node-fetch";
 
 const storage = new RedisAdapter("Session");
 
@@ -239,6 +238,10 @@ function _validateClaim(claim: ClaimProperty): Promise<ClaimProperty> {
     .then(_validateClaimSpecifics);
 }
 
+function _findValidClaim(type: string) {
+  return R.find(R.propEq("type", type))(validClaims);
+}
+
 function _validateClaimType(
   claim: ClaimProperty | VerifyClaimRequest
 ): boolean {
@@ -253,10 +256,6 @@ function _validateClaimSpecifics(claim: ClaimProperty): ClaimProperty {
     // Get validation function should thow error
   }
   return claim;
-}
-
-function _findValidClaim(type: string) {
-  return R.find(R.propEq("type", type))(validClaims);
 }
 
 function _validateSubject(
@@ -281,20 +280,27 @@ function _createVerifier(
       .then(() => {
         return Promise.all([
           accounts.recover(JSON.stringify(unsignedClaimRequest), signature),
-          // TODO: validate the did public key via an API call
-          mndid.getDDO(unsignedClaimRequest.subject)
+          fetch(
+            `${process.env.API_BRIDGE_ADDRESS}/v1/userdid/${
+              unsignedClaimRequest.subject
+            }`
+          ).then(response => response.json())
         ]).spread((recoveredKey: string, ddo: any) => {
           const matchPublicKey = (keyData: any): boolean => {
-            const publicKey = R.prop("publicKey", keyData);
-            return R.equals("0x" + publicKey, recoveredKey);
+            const publicKey = R.prop("ethereumAddress", keyData);
+            return R.equals(
+              publicKey.toLowerCase(),
+              recoveredKey.toLowerCase()
+            );
           };
-          if (R.none(matchPublicKey, ddo.publicKeys)) {
+          if (R.none(matchPublicKey, ddo.publicKey)) {
             throw new Error("The public keys don't match.");
           }
           return true;
         });
       })
       .catch(err => {
+        console.log(err);
         throw new Error("The signature is invalid.");
       });
   };

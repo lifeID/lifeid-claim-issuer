@@ -40,6 +40,7 @@ export class ClaimController extends Controller {
         created: true
       }))
       .catch(err => {
+        console.log(err);
         throw new ApiError("BadRequest", 400, err);
       });
   }
