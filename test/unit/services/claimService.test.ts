@@ -1,3 +1,4 @@
+require("dotenv").config(); // tslint:disable-line
 import * as chai from "chai";
 import * as sinon from "sinon";
 import * as sinonChai from "sinon-chai";
@@ -8,8 +9,13 @@ import * as proxyquire from "proxyquire";
 import claimService from "../../../src/services/claimService";
 import * as Accounts from "web3-eth-accounts";
 import * as R from "ramda";
+import { ClaimTicket } from "../../../src/models/claimTicket";
+import { VerifyClaimRequest } from "../../../src/models/verifyClaimRequest";
+import { ClaimProperty } from "../../../src/models/claim";
 
 const accounts = new Accounts();
+
+console.log("RB DEBUG: Running the tests");
 
 describe("claimService", () => {
   describe("validateClaimRequest", () => {
@@ -133,21 +139,35 @@ describe("claimService", () => {
     });
   });
   describe("validateVerifyClaimRequest", () => {
-    let validVerifyClaimRequest;
-    let invalidVerifyClaimRequest;
-    let storage;
+    let validVerifyClaimRequest : VerifyClaimRequest;
+    let invalidVerifyClaimRequest : VerifyClaimRequest;
+    let mockClaimTicket : ClaimTicket;
+    let mockClaim : ClaimProperty;
     before(() => {
       validVerifyClaimRequest = {
         verificationCode: "12345",
-        email: "testing@123.com",
+        value: "testing@123.com",
         type: "email"
       };
 
       invalidVerifyClaimRequest = {
         verificationCode: "12345",
-        email: "testing@123.com",
+        value: "testing@123.com",
         type: "emole"
       };
+
+      mockClaim = {
+        type: "email",
+        value: "testing@123.com"
+      };
+
+      mockClaimTicket = {
+        code: "12345",
+        subject: "did:life:11234Fd4014b81F5d1fDA1355F1bfbD14C812d3f8D22b04f0",
+        timestamp: "1330688329321",
+        claim: mockClaim
+      }
+
     });
     it("should accept a valid request", () => {
       return claimService
@@ -158,10 +178,12 @@ describe("claimService", () => {
     });
 
     it("should issue claim on valid verification", () => {
+      console.log("RB DEBUG: Testing Issue Claim");
+      claimService.storeClaimTicket(mockClaimTicket).tap(res => console.log("RB DEBUG: Claim Ticket Value:" + res.claim.value)).catch(err => console.log("RB DEBUG: Error:" + err));
       return claimService
-        .issueClaim(storage, validVerifyClaimRequest)
+        .issueClaim(validVerifyClaimRequest)
         .then(res => {
-          res.should.have.keys(["verifiableClaim"]);
+          res.should.have.keys(["id", "type", "issuer", "issued", "claims", "revocation", "signature"]);
         });
     });
     it("should throw an error if invalid type", () => {

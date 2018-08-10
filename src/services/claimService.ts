@@ -126,7 +126,7 @@ function _matchVerificationCode(
   verifyClaimRequest: VerifyClaimRequest
 ) {
   if (claimTicket.code !== verifyClaimRequest.verificationCode) {
-    throw new Error("Claim not found");
+    throw new Error("Claim not found: Claim Ticket code does not match Request Verification Code");
   }
   return claimTicket;
 }
@@ -138,7 +138,7 @@ function _fetchClaimTicket(
     .then(() => storage.find(claimRequest.value))
     .then(claimTicket => {
       if (!claimTicket) {
-        throw new Error("Claim not found");
+        throw new Error("Claim not found: Claim Ticket not present in Database");
       }
       return claimTicket;
     });
@@ -178,7 +178,7 @@ function _createClaim(
 function _generateClaimData(
   wrappedClaimTicket: WrappedClaimTicket
 ): WrappedClaim {
-  console.log(process.env);
+  console.log("RB DEBUG: HOST = " + process.env.HOST);
   return {
     revocationKey: wrappedClaimTicket.revocationKey,
     claimID: wrappedClaimTicket.claimID,
