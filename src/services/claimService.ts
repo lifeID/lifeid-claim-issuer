@@ -3,6 +3,7 @@
 import { ClaimCreateRequest } from "../models/claimCreateRequest";
 import { VerifyClaimRequest } from "../models/verifyClaimRequest";
 import { RedisAdapter } from "../adaptors/redis_adaptor";
+import {Claim} from "../models/entity/Claim";
 
 import { UnsignedClaimRequest } from "../models/unsignedClaimRequest";
 import { ClaimProperty, VerifiableClaim, WrappedClaim } from "../models/claim";
@@ -17,6 +18,7 @@ import { TIMEOUT } from "dns";
 import { TIMESTAMP_FORMAT } from "../constants";
 import { generateCode } from "./codeService";
 import { pubsub } from "../events";
+import { getRepository } from "../../node_modules/typeorm";
 
 const storage = new RedisAdapter("Session");
 
@@ -107,11 +109,12 @@ function getClaimHash(claimID: string): Promise<string> {
 }
 
 function _fetchClaim(claimID: string) {
-  return storage.find(claimID).then(JSON.parse);
+  return storage.find(claimID).then(JSON.parse); //RB 20180810 replace redis by postgres OLD
 }
 
 function _storeClaim(wrappedClaim: WrappedClaim): WrappedClaim {
   console.log("Storing hash of ", JSON.stringify(wrappedClaim.claim));
+  //RB 20180810 replace redis by postgres OLD START
   storage.upsert(
     wrappedClaim.claimID,
     JSON.stringify({
@@ -119,6 +122,7 @@ function _storeClaim(wrappedClaim: WrappedClaim): WrappedClaim {
     }),
     10000000
   );
+  //RB20180810 replace redis by postgres OLD END
   return wrappedClaim;
 }
 function _matchVerificationCode(
@@ -325,6 +329,30 @@ function _getCallbackEvents(claim: ClaimProperty) {
   return R.prop("callbackEvents", _findValidClaim(claim.type));
 }
 
+/* RB20180810 replace redis by postgres NEW START*/
+
+
+function storeClaimToPostgres(claimID:string, claimHash:string): Promise<Claim> {
+    let claim = new Claim();
+    claim.claimID = claimID;
+    claim.claimHash = claimHash;
+    let claimRepository = getRepository(Claim);
+    return Promise.resolve(claimRepository.save(claim));
+}
+
+function getClaimFromPostgres(id:string): Promise<Claim> {
+  let claimRepository = getRepository(Claim);
+  return Promise.resolve(claimRepository.findOne( {claimID: id} ))
+  .then(claim => {
+      if(!claim) {
+        throw new Error("The claim was not found in postgres.");
+      }
+      return claim;
+    }
+  )
+}
+/* RB20180810 replace redis by postgres NEW END*/
+
 export default {
   validateClaimRequest,
   verifySignature,
@@ -333,5 +361,7 @@ export default {
   storeClaimTicket,
   emitCallbackEvents,
   issueClaim,
-  getClaimHash
+  getClaimHash,
+  storeClaimToPostgres,
+  getClaimFromPostgres
 };
