@@ -63,7 +63,8 @@ function issueClaim(
     .then(_createRevocationKey)
     .then(_createClaimID)
     .then(_createClaim)
-    .tap(wrappedClaim => _storeClaim(wrappedClaim))
+    // .tap(wrappedClaim => _storeClaim(wrappedClaim)) //RB 20180810 replace redis by postgres OLD
+    .then(wrappedClaim => _storeClaim(wrappedClaim)) //RB 20180810 replace redis by postgres NEW
     .then(wrappedClaim => wrappedClaim.claim);
 }
 
@@ -101,29 +102,23 @@ function emitCallbackEvents(claimTicket): void {
 
 function getClaimHash(claimID: string): Promise<string> {
   return Promise.resolve()
-    .then(() => _fetchClaim(claimID))
+    //.then(() => _fetchClaim(claimID)) //RB 20180810 replace redis by postgres OLD
+    .then(() => _getClaimFromPostgres(claimID)) //RB 20180810 replace redis by postgres NEW
     .then(claim => claim.claimHash)
     .catch(err => {
       throw new Error("The claim was not found.");
     });
 }
 
-function _fetchClaim(claimID: string) {
-  return storage.find(claimID).then(JSON.parse); //RB 20180810 replace redis by postgres OLD
-}
+// function _fetchClaim(claimID: string) {
+//   // return storage.find(claimID).then(JSON.parse); //RB 20180810 replace redis by postgres OLD
+//   return getClaimFromPostgres(claimID);//RB 20180810 replace redis by postgres NEW
+// }
 
-function _storeClaim(wrappedClaim: WrappedClaim): WrappedClaim {
+function _storeClaim(wrappedClaim: WrappedClaim): Promise<WrappedClaim> {
   console.log("Storing hash of ", JSON.stringify(wrappedClaim.claim));
-  //RB 20180810 replace redis by postgres OLD START
-  storage.upsert(
-    wrappedClaim.claimID,
-    JSON.stringify({
-      claimHash: web3.utils.sha3(JSON.stringify(wrappedClaim.claim))
-    }),
-    10000000
-  );
-  //RB20180810 replace redis by postgres OLD END
-  return wrappedClaim;
+  return _storeClaimToPostgres(wrappedClaim.claimID,web3.utils.sha3(JSON.stringify(wrappedClaim.claim))).then(() => wrappedClaim);
+
 }
 function _matchVerificationCode(
   claimTicket: ClaimTicket,
@@ -332,7 +327,7 @@ function _getCallbackEvents(claim: ClaimProperty) {
 /* RB20180810 replace redis by postgres NEW START*/
 
 
-function storeClaimToPostgres(claimID:string, claimHash:string): Promise<Claim> {
+function _storeClaimToPostgres(claimID:string, claimHash:string): Promise<Claim> {
     let claim = new Claim();
     claim.claimID = claimID;
     claim.claimHash = claimHash;
@@ -340,9 +335,9 @@ function storeClaimToPostgres(claimID:string, claimHash:string): Promise<Claim> 
     return Promise.resolve(claimRepository.save(claim));
 }
 
-function getClaimFromPostgres(id:string): Promise<Claim> {
+function _getClaimFromPostgres(claimID:string): Promise<Claim> {
   let claimRepository = getRepository(Claim);
-  return Promise.resolve(claimRepository.findOne( {claimID: id} ))
+  return Promise.resolve(claimRepository.findOne( {claimID} ))
   .then(claim => {
       if(!claim) {
         throw new Error("The claim was not found in postgres.");
@@ -362,6 +357,7 @@ export default {
   emitCallbackEvents,
   issueClaim,
   getClaimHash,
-  storeClaimToPostgres,
-  getClaimFromPostgres
+  _storeClaimToPostgres,
+  _getClaimFromPostgres,
+  _storeClaim
 };
