@@ -52,7 +52,7 @@ describe("emailService", () => {
     describe("handleEmailClaim", () => {
       it("should generate a unique code", () => {
         return emailService.handleEmailClaim(validClaimTicket).then(res => {
-          return res.code.should.match(/^\d{1,5}$/);
+          return res.code.should.match(/^\d{1,6}$/);
         });
       });
     });
