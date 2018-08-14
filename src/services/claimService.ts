@@ -3,6 +3,8 @@
 import { ClaimCreateRequest } from "../models/claimCreateRequest";
 import { VerifyClaimRequest } from "../models/verifyClaimRequest";
 import { RedisAdapter } from "../adaptors/redis_adaptor";
+import { Claim } from "../models/entity/Claim";
+import { findClaim, storeClaim } from "../repositories/ClaimRepository";
 
 import { UnsignedClaimRequest } from "../models/unsignedClaimRequest";
 import { ClaimProperty, VerifiableClaim, WrappedClaim } from "../models/claim";
@@ -61,7 +63,7 @@ function issueClaim(
     .then(_createRevocationKey)
     .then(_createClaimID)
     .then(_createClaim)
-    .tap(wrappedClaim => _storeClaim(wrappedClaim))
+    .then(wrappedClaim => _storeClaim(wrappedClaim))
     .then(wrappedClaim => wrappedClaim.claim);
 }
 
@@ -107,19 +109,17 @@ function getClaimHash(claimID: string): Promise<string> {
 }
 
 function _fetchClaim(claimID: string) {
-  return storage.find(claimID).then(JSON.parse);
+  return findClaim(claimID);
 }
 
-function _storeClaim(wrappedClaim: WrappedClaim): WrappedClaim {
+function _storeClaim(wrappedClaim: WrappedClaim): Promise<WrappedClaim> {
   console.log("Storing hash of ", JSON.stringify(wrappedClaim.claim));
-  storage.upsert(
+  return Promise.resolve(() => 
+  storeClaim(
     wrappedClaim.claimID,
-    JSON.stringify({
-      claimHash: web3.utils.sha3(JSON.stringify(wrappedClaim.claim))
-    }),
-    10000000
-  );
-  return wrappedClaim;
+    web3.utils.sha3(JSON.stringify(wrappedClaim.claim))
+  ))
+  .then(() => wrappedClaim);
 }
 function _matchVerificationCode(
   claimTicket: ClaimTicket,

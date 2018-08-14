@@ -6,6 +6,7 @@
     "outDir": "./dist",
     "rootDir": "./src",
     "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
     "allowJs": true
   },
   "exclude": ["node_modules", "dist", "test", "tests"]
