@@ -45,7 +45,7 @@ const models: TsoaRoute.Models = {
             "name": { "dataType": "string" },
             "issuer": { "dataType": "string", "required": true },
             "issued": { "dataType": "string", "required": true },
-            "claim": { "ref": "ClaimProperty", "required": true },
+            "claims": { "dataType": "array", "array": { "ref": "ClaimProperty" }, "required": true },
             "expires": { "dataType": "string" },
             "revocation": { "ref": "Revocation" },
             "signature": { "ref": "Signature" },
