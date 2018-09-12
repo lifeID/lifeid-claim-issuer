@@ -37,8 +37,8 @@ function validateClaim(claimTicket: ClaimTicket): Promise<boolean> {
 
   return Promise.resolve(claimProperty)
     .then(() => {
-      if (!emailValidator.validate(claimProperty.value)) {
-        throw new Error(`The email address ${claimProperty.value} is invalid.`);
+      if (!emailValidator.validate(claimProperty.email)) {
+        throw new Error(`The email address ${claimProperty.email} is invalid.`);
       }
     })
     .then(() => true);
@@ -57,7 +57,7 @@ function verifyNodemailer() {
 function _buildEmailMessage(claimTicket: ClaimTicket) {
   return {
     from: "noreply@lifeid.io", // sender address
-    to: claimTicket.claim.value, // list of receivers
+    to: claimTicket.claim.email, // list of receivers
     subject: "LifeID email confirmation",
     text: `Your email confirmation code is ${claimTicket.code}`, // plain text body
     html: `LifeID has sent you an email confirmation code: <b>${

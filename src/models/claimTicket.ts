@@ -3,7 +3,8 @@ export interface ClaimTicket {
   code?: string;
   subject: string;
   timestamp: string;
-  claim: ClaimProperty;
+  claim: any;
+  type: string;
 }
 
 export interface WrappedClaimTicket {

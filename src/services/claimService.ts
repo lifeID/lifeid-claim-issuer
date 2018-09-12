@@ -1,4 +1,5 @@
 import { ClaimCreateRequest } from "../models/claimCreateRequest";
+import { ClaimJWTCreateRequest } from "../models/claimJWTCreateRequest";
 import { VerifyClaimRequest } from "../models/verifyClaimRequest";
 import { RedisAdapter } from "../adaptors/redis_adaptor";
 
@@ -16,6 +17,9 @@ import { TIMESTAMP_FORMAT } from "../constants";
 import { generateCode } from "./codeService";
 import { pubsub } from "../events";
 import fetch from "node-fetch";
+
+import * as didJWT from "lifeid-did-jwt";
+didJWT.registerLife("http://localhost:8888");
 
 const storage = new RedisAdapter("Session");
 
@@ -35,29 +39,12 @@ const validClaims = [
 function validateClaimRequest(
   claimRequest: ClaimCreateRequest
 ): Promise<ClaimCreateRequest> {
-  return Promise.resolve(claimRequest)
-    .tap(() => _validateClaim(claimRequest.claim))
-    .then(_validateSubject)
-    .then(_validateClaimDetails);
+  return Promise.resolve(claimRequest).then(_validateClaimDetails);
 }
 
-function validateVerifyClaimRequest(
-  verifyClaimRequest: VerifyClaimRequest
-): Promise<VerifyClaimRequest> {
-  return Promise.resolve(verifyClaimRequest).tap(() =>
-    _validateClaimType(verifyClaimRequest)
-  );
-}
-
-function issueClaim(
-  verifyClaimRequest: VerifyClaimRequest
-): Promise<VerifiableClaim> {
-  return Promise.resolve(verifyClaimRequest)
-    .then(claimRequest => _fetchClaimTicket(claimRequest))
-    .then(claimTicket =>
-      _matchVerificationCode(claimTicket, verifyClaimRequest)
-    )
-    .then(_createRevocationKey)
+function issueClaim(claimTicket: ClaimTicket): Promise<VerifiableClaim> {
+  return Promise.resolve()
+    .then(() => _createRevocationKey(claimTicket))
     .then(_createClaimID)
     .then(_createClaim)
     .tap(wrappedClaim => _storeClaim(wrappedClaim))
@@ -67,46 +54,56 @@ function issueClaim(
 function verifySignature(
   claimRequest: ClaimCreateRequest
 ): Promise<ClaimCreateRequest> {
-  const checkSignature = _createVerifier(R.prop("signature", claimRequest));
-  const unsignedClaimRequest = R.dissoc("signature", claimRequest);
-  return Promise.resolve(unsignedClaimRequest)
-    .then(checkSignature)
-    .then(res => claimRequest);
+  // const checkSignature = _createVerifier(R.prop("signature", claimRequest));
+  // const unsignedClaimRequest = R.dissoc("signature", claimRequest);
+  return (
+    Promise.resolve() // .resolve(unsignedClaimRequest)
+      // .then(checkSignature)
+      .then(res => claimRequest)
+  );
 }
 
-function createClaimTicket(
-  claimRequest: ClaimCreateRequest
-): Promise<ClaimTicket> {
-  return Promise.resolve(claimRequest)
-    .then(_createClaimTicket)
+function createClaimTicket(request: {
+  signedJWT: string;
+  did: string;
+  type: string;
+}): Promise<ClaimTicket> {
+  return Promise.resolve()
+    .then(() => _createClaimTicket(request.signedJWT, request.type))
     .then(_handleClaimTicket);
 }
 
 function storeClaimTicket(claimTicket: ClaimTicket): Promise<ClaimTicket> {
   // store claim and expire in 1 day(86400 seconds)
   return storage
-    .upsert(claimTicket.claim.value, claimTicket, 86400)
+    .upsert(claimTicket.subject, claimTicket, 86400)
     .then(() => claimTicket);
 }
 
 function emitCallbackEvents(claimTicket): void {
-  const callbackEvents = _getCallbackEvents(claimTicket.claim);
+  const callbackEvents = _getCallbackEvents(claimTicket.type);
   R.map(event => {
     pubsub.emit(event, claimTicket);
   }, callbackEvents);
 }
 
-function getClaimHash(claimID: string): Promise<string> {
+function verifyJWT(signedJWT: string, did: string): Promise<string> {
   return Promise.resolve()
-    .then(() => _fetchClaim(claimID))
-    .then(claim => claim.claimHash)
-    .catch(err => {
-      throw new Error("The claim was not found.");
+    .then(() =>
+      didJWT.verifyJWT(signedJWT, {
+        audience: did
+      })
+    )
+    .then(res => {
+      console.log(res);
+      return signedJWT;
     });
 }
-
-function _fetchClaim(claimID: string) {
-  return storage.find(claimID).then(JSON.parse);
+function findAndVerifyVerificationCode(signedJWT: string, did: string) {
+  return Promise.resolve(_fetchClaimTicket(did)).then(claimTicket => {
+    _matchVerificationCode(claimTicket, signedJWT);
+    return claimTicket;
+  });
 }
 
 function _storeClaim(wrappedClaim: WrappedClaim): WrappedClaim {
@@ -120,21 +117,20 @@ function _storeClaim(wrappedClaim: WrappedClaim): WrappedClaim {
   );
   return wrappedClaim;
 }
-function _matchVerificationCode(
-  claimTicket: ClaimTicket,
-  verifyClaimRequest: VerifyClaimRequest
-) {
-  if (claimTicket.code !== verifyClaimRequest.verificationCode) {
-    throw new Error("Claim not found");
+function _matchVerificationCode(claimTicket: ClaimTicket, signedJWT: string) {
+  const decodedClaim = didJWT.decodeJWT(signedJWT);
+  console.log(decodedClaim);
+  const verificationCode = decodedClaim.payload.payload.verificationCode;
+  if (claimTicket.code !== verificationCode) {
+    throw new Error("Verification code doesn't match");
   }
   return claimTicket;
 }
 
-function _fetchClaimTicket(
-  claimRequest: VerifyClaimRequest
-): Promise<ClaimTicket> {
+function _fetchClaimTicket(did: string): Promise<ClaimTicket> {
+  console.log(did);
   return Promise.resolve()
-    .then(() => storage.find(claimRequest.value))
+    .then(() => storage.find(did))
     .then(claimTicket => {
       if (!claimTicket) {
         throw new Error("Claim not found");
@@ -143,11 +139,21 @@ function _fetchClaimTicket(
     });
 }
 
-function _createClaimTicket(claimRequest: ClaimCreateRequest): ClaimTicket {
+function _createClaimTicket(signedJWT: string, type: string): ClaimTicket {
+  const decodedClaim = didJWT.decodeJWT(signedJWT);
+  console.log("DECODED: ", decodedClaim);
+  console.log({
+    timestamp: _getTimestamp(),
+    claim: decodedClaim.payload.payload,
+    subject: decodedClaim.payload.iss,
+    type
+  });
+
   return {
     timestamp: _getTimestamp(),
-    claim: claimRequest.claim,
-    subject: claimRequest.subject
+    claim: decodedClaim.payload.payload,
+    subject: decodedClaim.payload.iss,
+    type
   };
 }
 
@@ -169,41 +175,43 @@ function _createClaimID(
 function _createClaim(
   wrappedClaimTicket: WrappedClaimTicket
 ): Promise<WrappedClaim> {
-  return Promise.resolve(wrappedClaimTicket)
-    .then(() => _generateClaimData(wrappedClaimTicket))
-    .then(_signClaim);
+  return Promise.resolve(wrappedClaimTicket).then(() =>
+    _generateClaimData(wrappedClaimTicket)
+  );
+  // .then(_signClaim);
 }
 
 function _generateClaimData(
   wrappedClaimTicket: WrappedClaimTicket
 ): WrappedClaim {
-  console.log(process.env);
   return {
     revocationKey: wrappedClaimTicket.revocationKey,
     claimID: wrappedClaimTicket.claimID,
-    claim: {
-      id: `${process.env.HOST}/v1/claims/${wrappedClaimTicket.claimID}`,
-      type: ["Credential", "EmailCredential"],
-      issuer: `${process.env.HOST}`,
-      issued: _getFormattedTimestamp(),
-      claims: [wrappedClaimTicket.claimTicket.claim],
-      revocation: {
-        key: wrappedClaimTicket.revocationKey.address,
-        type: "Secp256k1"
-      }
-    }
+    claim: _createClaimJWT(wrappedClaimTicket)
   };
 }
 
-function _signClaim(wrappedClaim: WrappedClaim): WrappedClaim {
-  const signature = accounts.sign(
-    JSON.stringify(wrappedClaim.claim),
-    process.env.PRIVATE_KEY
-  ).signature;
-
-  return R.mergeDeepLeft(wrappedClaim, {
-    claim: { signature: _createSignatureBlock(signature) }
-  });
+function _createClaimJWT(wrappedClaimTicket: WrappedClaimTicket) {
+  const signer = didJWT.SimpleSigner(process.env.PRIVATE_KEY);
+  return didJWT.createJWT(
+    {
+      aud: process.env.LIFEID_DID,
+      exp: 1957463421,
+      name: "lifeID verified email claim",
+      data: {
+        id: `${process.env.HOST}/v1/claims/${wrappedClaimTicket.claimID}`,
+        type: ["Credential", "EmailCredential"],
+        issuer: `${process.env.HOST}`,
+        issued: _getFormattedTimestamp(),
+        claim: wrappedClaimTicket.claimTicket.claim,
+        revocation: {
+          key: wrappedClaimTicket.revocationKey.address,
+          type: "Secp256k1"
+        }
+      }
+    },
+    { issuer: process.env.LIFEID_DID, signer }
+  );
 }
 
 function _createSignatureBlock(signature) {
@@ -232,23 +240,8 @@ function _validateClaimDetails(
   return claimRequest;
 }
 
-function _validateClaim(claim: ClaimProperty): Promise<ClaimProperty> {
-  return Promise.resolve(claim)
-    .tap(() => _validateClaimType(claim))
-    .then(_validateClaimSpecifics);
-}
-
 function _findValidClaim(type: string) {
   return R.find(R.propEq("type", type))(validClaims);
-}
-
-function _validateClaimType(
-  claim: ClaimProperty | VerifyClaimRequest
-): boolean {
-  if (!_findValidClaim(claim.type)) {
-    throw new Error(`Claim type '${claim.type}' is not valid.`);
-  }
-  return true;
 }
 
 function _validateClaimSpecifics(claim: ClaimProperty): ClaimProperty {
@@ -256,19 +249,6 @@ function _validateClaimSpecifics(claim: ClaimProperty): ClaimProperty {
     // Get validation function should thow error
   }
   return claim;
-}
-
-function _validateSubject(
-  claimRequest: ClaimCreateRequest
-): Promise<ClaimCreateRequest> {
-  return mndid
-    .validateDID(claimRequest.subject)
-    .then(res => {
-      return claimRequest;
-    })
-    .catch(err => {
-      throw new Error("The subject must be a valid DID.");
-    });
 }
 
 function _createVerifier(
@@ -286,6 +266,7 @@ function _createVerifier(
             }`
           ).then(response => response.json())
         ]).spread((recoveredKey: string, ddo: any) => {
+          console.log(ddo);
           const matchPublicKey = (keyData: any): boolean => {
             const publicKey = R.prop("ethereumAddress", keyData);
             return R.equals(
@@ -311,7 +292,7 @@ function _getPublicKeyFromDID(did: string): Promise<string> {
 }
 
 function _handleClaimTicket(claimTicket: ClaimTicket): ClaimTicket {
-  const claimHandler = _getClaimHandlerFunction(claimTicket.claim);
+  const claimHandler = _getClaimHandlerFunction(claimTicket.type);
   return claimHandler(claimTicket);
 }
 
@@ -322,22 +303,22 @@ function _getValidationFunction(
 }
 
 function _getClaimHandlerFunction(
-  claim: ClaimProperty
+  type: string
 ): (claim: ClaimTicket) => ClaimTicket {
-  return R.prop("handlerFunction", _findValidClaim(claim.type));
+  return R.prop("handlerFunction", _findValidClaim(type));
 }
 
-function _getCallbackEvents(claim: ClaimProperty) {
-  return R.prop("callbackEvents", _findValidClaim(claim.type));
+function _getCallbackEvents(type: string) {
+  return R.prop("callbackEvents", _findValidClaim(type));
 }
 
 export default {
   validateClaimRequest,
   verifySignature,
   createClaimTicket,
-  validateVerifyClaimRequest,
   storeClaimTicket,
   emitCallbackEvents,
   issueClaim,
-  getClaimHash
+  verifyJWT,
+  findAndVerifyVerificationCode
 };
