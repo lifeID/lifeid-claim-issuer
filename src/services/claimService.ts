@@ -6,6 +6,7 @@ import { RedisAdapter } from "../adaptors/redis_adaptor";
 import { UnsignedClaimRequest } from "../models/unsignedClaimRequest";
 import { ClaimProperty, VerifiableClaim, WrappedClaim } from "../models/claim";
 import { ClaimTicket, WrappedClaimTicket } from "../models/claimTicket";
+
 import * as R from "ramda";
 import * as mndid from "mndid";
 import * as Promise from "bluebird";
@@ -18,8 +19,8 @@ import { generateCode } from "./codeService";
 import { pubsub } from "../events";
 import fetch from "node-fetch";
 
-import * as didJWT from "lifeid-did-jwt";
-didJWT.registerLife("http://localhost:8888");
+import * as lifeidDID from "lifeid-did";
+lifeidDID.registerLife(process.env.API_BRIDGE_ADDRESS);
 
 const storage = new RedisAdapter("Session");
 
@@ -89,11 +90,7 @@ function emitCallbackEvents(claimTicket): void {
 
 function verifyJWT(signedJWT: string, did: string): Promise<string> {
   return Promise.resolve()
-    .then(() =>
-      didJWT.verifyJWT(signedJWT, {
-        audience: did
-      })
-    )
+    .then(() => lifeidDID.verifyJWT(did, signedJWT))
     .then(res => {
       console.log(res);
       return signedJWT;
@@ -118,7 +115,7 @@ function _storeClaim(wrappedClaim: WrappedClaim): WrappedClaim {
   return wrappedClaim;
 }
 function _matchVerificationCode(claimTicket: ClaimTicket, signedJWT: string) {
-  const decodedClaim = didJWT.decodeJWT(signedJWT);
+  const decodedClaim = lifeidDID.decodeJWT(signedJWT);
   console.log(decodedClaim);
   const verificationCode = decodedClaim.payload.payload.verificationCode;
   if (claimTicket.code !== verificationCode) {
@@ -140,18 +137,15 @@ function _fetchClaimTicket(did: string): Promise<ClaimTicket> {
 }
 
 function _createClaimTicket(signedJWT: string, type: string): ClaimTicket {
-  const decodedClaim = didJWT.decodeJWT(signedJWT);
+  const decodedClaim = lifeidDID.decodeJWT(signedJWT);
   console.log("DECODED: ", decodedClaim);
-  console.log({
-    timestamp: _getTimestamp(),
-    claim: decodedClaim.payload.payload,
-    subject: decodedClaim.payload.iss,
-    type
-  });
 
   return {
     timestamp: _getTimestamp(),
-    claim: decodedClaim.payload.payload,
+    claim: {
+      ...{ id: decodedClaim.payload.iss },
+      ...decodedClaim.payload.payload
+    },
     subject: decodedClaim.payload.iss,
     type
   };
@@ -192,25 +186,22 @@ function _generateClaimData(
 }
 
 function _createClaimJWT(wrappedClaimTicket: WrappedClaimTicket) {
-  const signer = didJWT.SimpleSigner(process.env.PRIVATE_KEY);
-  return didJWT.createJWT(
+  return lifeidDID.createJWT(
+    process.env.LIFEID_DID,
     {
-      aud: process.env.LIFEID_DID,
-      exp: 1957463421,
-      name: "lifeID verified email claim",
-      data: {
-        id: `${process.env.HOST}/v1/claims/${wrappedClaimTicket.claimID}`,
-        type: ["Credential", "EmailCredential"],
-        issuer: `${process.env.HOST}`,
-        issued: _getFormattedTimestamp(),
-        claim: wrappedClaimTicket.claimTicket.claim,
-        revocation: {
-          key: wrappedClaimTicket.revocationKey.address,
-          type: "Secp256k1"
-        }
+      id: `${process.env.HOST}/v1/claims/${wrappedClaimTicket.claimID}`,
+      type: ["Credential", "EmailCredential"],
+      issuer: `${process.env.HOST}`,
+      issued: _getFormattedTimestamp(),
+      name: "lifeID Email Credential",
+      claim: wrappedClaimTicket.claimTicket.claim,
+      revocation: {
+        key: wrappedClaimTicket.revocationKey.address,
+        type: "Secp256k1"
       }
     },
-    { issuer: process.env.LIFEID_DID, signer }
+    process.env.PRIVATE_KEY,
+    10000000
   );
 }
 

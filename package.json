@@ -7,7 +7,7 @@
   "scripts": {
     "start": "node ./dist/server.js",
     "build": "yarn run clean && yarn run swagger-gen && yarn run routes-gen && tsc",
-    "dev": "BLUEBIRD_LONG_STACK_TRACES=1 nodemon -L -e ts --ignore 'routes.ts' --watch './src/' --exec \"yarn run build && yarn run start\"",
+    "dev": "BLUEBIRD_LONG_STACK_TRACES=1 nodemon -L -e ts --ignore 'routes.ts' --watch './src/' --exec \"yarn run build && node --inspect --inspect-port=9226 ./dist/server.js\"",
     "clean": "rimraf dist",
     "lint": "tslint ./src/**/*.ts",
     "swagger-gen": "tsoa swagger",
@@ -51,7 +51,7 @@
     "express": "^4.16.3",
     "ioredis": "^3.2.2",
     "left-pad": "^1.3.0",
-    "lifeid-did-jwt": "../did-jwt",
+    "lifeid-did": "^0.0.10",
     "method-override": "^2.3.10",
     "mndid": "^1.0.7",
     "ncp": "^2.0.0",
